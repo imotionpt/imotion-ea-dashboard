@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iMotion Executive Assistant Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Helvetica,sans-serif;background:#F8FAFC;color:#0F172A;min-height:100vh}
+.app{display:flex;min-height:100vh}
+.sidebar{width:230px;background:#003E82;display:flex;flex-direction:column;min-height:100vh;position:fixed;top:0;left:0;bottom:0}
+.main{margin-left:230px;flex:1;padding:28px 32px;min-height:100vh}
+.logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.logo-name{font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:17px;color:#fff;margin-top:6px}
+.logo-sub{font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:0.15em;text-transform:uppercase}
+.user-pill{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:8px}
+.avatar{width:30px;height:30px;border-radius:50%;background:#FF7100;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600;color:#fff}
+.user-role{font-size:10px;color:rgba(255,255,255,0.4)}
+.nav{flex:1;padding:8px 0}
+.nav-btn{width:100%;text-align:left;background:transparent;border:none;border-left:3px solid transparent;color:rgba(255,255,255,0.5);padding:11px 16px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:9px;transition:all 0.15s}
+.nav-btn:hover{color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.05)}
+.nav-btn.active{background:rgba(255,113,0,0.18);border-left-color:#FF7100;color:#fff;font-weight:600}
+.nav-badge{margin-left:auto;background:#FF7100;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.quick-links{padding:12px 14px;border-top:1px solid rgba(255,255,255,0.1)}
+.ql-title{font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:7px}
+.ql-link{font-size:11px;color:rgba(255,255,255,0.45);text-decoration:none;display:block;padding:4px 6px;border-radius:5px}
+.ql-link:hover{color:#fff;background:rgba(255,255,255,0.08)}
+.ql-empty{font-size:11px;color:rgba(255,255,255,0.2);padding:4px 6px;display:block}
+.sb-bottom{padding:10px 14px 18px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:7px}
+.btn-orange{background:#FF7100;color:#fff;border:none;border-radius:8px;padding:10px 0;font-size:13px;font-weight:700;cursor:pointer;width:100%}
+.btn-export{background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.6);border-radius:8px;padding:8px 0;font-size:12px;cursor:pointer;width:100%}
+.btn-signout{background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.35);border-radius:8px;padding:7px 0;font-size:11px;cursor:pointer;width:100%}
+.page-title{font-size:22px;font-weight:700;color:#003E82;margin-bottom:4px}
+.page-sub{font-size:13px;color:#475569;margin-bottom:22px}
+.stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-bottom:20px}
+.stat-card{background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:15px 14px}
+.stat-label{font-size:9px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:7px}
+.stat-val{font-size:28px;font-weight:800}
+.alert{border-radius:9px;padding:11px 16px;margin-bottom:9px;font-size:13px;font-weight:500}
+.alert-red{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}
+.alert-amber{background:#FFFBEB;color:#92400E;border:1px solid #FDE68A}
+.alert-blue{background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE}
+.sec-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin:18px 0 9px;display:flex;align-items:center;gap:7px}
+.sec-bar{width:3px;height:13px;border-radius:0;flex-shrink:0}
+.task-card{background:#fff;border:1px solid #E2E8F0;border-radius:9px;margin-bottom:7px;overflow:hidden;border-left-width:4px;border-left-style:solid}
+.task-row{padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.task-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;color:#0F172A}
+.task-name.done{text-decoration:line-through;color:#94A3B8}
+.task-meta{font-size:11px;color:#94A3B8;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px}
+.task-actions{display:flex;gap:4px;flex-shrink:0}
+.task-btn{width:27px;height:27px;border-radius:6px;border:1px solid #E2E8F0;background:#F8FAFC;cursor:pointer;font-size:12px;color:#475569}
+.task-btn:hover{background:#E2E8F0}
+.delegate-panel{padding:10px 14px;background:#EFF6FF;border-top:1px solid #BFDBFE;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.delegate-panel-title{font-size:10px;font-weight:700;color:#1D4ED8;text-transform:uppercase;letter-spacing:0.08em;margin-right:4px}
+.chip{font-size:11px;font-weight:600;padding:4px 12px;border-radius:14px;border:1px solid #003E82;color:#003E82;background:#fff;cursor:pointer}
+.chip:hover{background:#003E82;color:#fff}
+.chip.active-chip{background:#003E82;color:#fff}
+.chip.remove-chip{border-color:#DC2626;color:#DC2626;background:#fff}
+.chip.remove-chip:hover{background:#DC2626;color:#fff}
+.chip.empty-msg{border:none;color:#94A3B8;cursor:default;background:none}
+.expand-detail{padding:12px 14px;border-top:1px solid #F1F5F9;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.expand-label{font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px}
+.expand-val{font-size:12px;color:#475569;line-height:1.6}
+.card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:20px 22px;margin-bottom:16px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;background:#fff;color:#0F172A;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#003E82}
+.field textarea{resize:vertical;line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.full{grid-column:1/-1}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px}
+.modal{background:#fff;border-radius:14px;padding:26px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:17px;font-weight:800;color:#003E82}
+.close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:#94A3B8}
+.save-btn{flex:1;background:#FF7100;color:#fff;border:none;border-radius:8px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer}
+.cancel-btn{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;font-size:13px;cursor:pointer}
+.tab-bar{display:flex;border-bottom:1px solid #E2E8F0;margin-bottom:16px}
+.tab{background:none;border:none;padding:10px 20px;font-size:13px;cursor:pointer;color:#94A3B8;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit}
+.tab.active{color:#FF7100;border-bottom-color:#FF7100;font-weight:600}
+.admin-highlight{border:2px solid #FF7100;border-radius:12px;padding:20px 22px;background:#fff;margin-bottom:18px}
+.delegate-tag{display:inline-flex;align-items:center;gap:6px;background:#003E82;border-radius:14px;padding:5px 7px 5px 12px;margin:3px}
+.delegate-tag span{font-size:12px;color:#fff;font-weight:600}
+.delegate-tag button{background:rgba(255,255,255,0.25);border:none;color:#fff;width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:10px;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.delegate-tag button:hover{background:rgba(255,255,255,0.5)}
+.team-toggle{font-size:11px;font-weight:600;padding:5px 13px;border-radius:14px;cursor:pointer;border:1px solid #E2E8F0;background:#F8FAFC;color:#475569;margin:3px}
+.team-toggle.on{background:#FF7100;color:#fff;border-color:#FF7100}
+.add-row{display:flex;gap:8px;margin-bottom:14px}
+.add-row input{flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:8px 11px;font-size:13px;font-family:inherit;outline:none}
+.add-row input:focus{border-color:#003E82}
+.add-btn{background:#003E82;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.search-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.search-row input,.search-row select{border:1px solid #E2E8F0;border-radius:8px;padding:8px 11px;font-size:12px;font-family:inherit;background:#fff;color:#0F172A;outline:none}
+.search-row input:focus,.search-row select:focus{border-color:#003E82}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 13px;text-align:left;font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+td{padding:10px 13px;font-size:12px;border-bottom:1px solid #F1F5F9;color:#0F172A}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#003E82 0%,#001f4d 100%);margin-left:0}
+.login-box{background:#fff;border-radius:18px;padding:40px 44px;width:400px;box-shadow:0 32px 80px rgba(0,0,0,0.3)}
+.login-logo{text-align:center;margin-bottom:28px}
+.brief-field{margin-bottom:14px}
+.brief-field label{display:block;font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px}
+.brief-field textarea{width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;outline:none}
+.brief-field textarea:focus{border-color:#003E82}
+.submit-btn{background:#FF7100;color:#fff;border:none;border-radius:8px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;width:100%}
+.success-note{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 14px;font-size:12px;color:#166534;text-align:center;margin-top:10px}
+.file-drop{border:2px dashed #E2E8F0;border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:#F8FAFC}
+.file-drop:hover{border-color:#003E82;background:#EFF6FF}
+.attach-item{display:flex;align-items:center;gap:9px;background:#F8FAFC;border-radius:8px;padding:7px 11px;margin-top:6px}
+.attach-name{font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attach-size{font-size:11px;color:#94A3B8}
+.attach-remove{background:none;border:none;cursor:pointer;color:#94A3B8;font-size:16px}
+.no-tasks{font-size:13px;color:#94A3B8;padding:10px 0 16px}
+.member-avatar{width:26px;height:26px;border-radius:50%;background:#003E82;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin-right:7px}
+.loading-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#003E82 0%,#001f4d 100%)}
+.loading-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.2);border-top-color:#FF7100;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sync-indicator{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#94A3B8;margin-left:8px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#16A34A}
+.sync-dot.syncing{background:#FF7100;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Microsoft Authentication Library - loaded once -->
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+
+<script>
+// ── MICROSOFT 365 CONFIGURATION ──
+const MSAL_CONFIG = {
+  auth: {
+    clientId: "aaf8df4a-211e-420f-bb1e-4b9192c99d0b",
+    authority: "https://login.microsoftonline.com/5de79cf9-bfe2-40d2-a39c-07a191ec2a0e",
+    redirectUri: window.location.origin + window.location.pathname,
+  },
+  cache: {
+    cacheLocation: "sessionStorage",
+    storeAuthStateInCookie: false,
+  }
+};
+
+const SITE_ID = "imotionpt.sharepoint.com,e20fa4e6-7f62-4574-829c-48beb7f4bf37,79e684a4-7f64-453b-ae3f-71a0d6b399c0";
+const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
+const SCOPES = ["Sites.ReadWrite.All", "User.Read", "Files.ReadWrite.All"];
+
+// List names in SharePoint
+const LISTS = {
+  tasks: "iMotion_Tasks",
+  briefs: "iMotion_DailyBriefs",
+  weekly: "iMotion_WeeklyReviews",
+  config: "iMotion_AppConfig",
+};
+
+let msalInstance;
+try {
+  msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+} catch(e) {
+  console.error("MSAL init error:", e);
+}
+
+// ── GRAPH API HELPER ──
+async function getToken() {
+  const accounts = msalInstance.getAllAccounts();
+  if (!accounts.length) throw new Error("No accounts found");
+  try {
+    const result = await msalInstance.acquireTokenSilent({ scopes: SCOPES, account: accounts[0] });
+    return result.accessToken;
+  } catch(e) {
+    const result = await msalInstance.acquireTokenPopup({ scopes: SCOPES });
+    return result.accessToken;
+  }
+}
+
+async function graphCall(endpoint, method = "GET", body = null) {
+  const token = await getToken();
+  const options = {
+    method,
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+  };
+  if (body) options.body = JSON.stringify(body);
+  const response = await fetch(`${GRAPH_BASE}${endpoint}`, options);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Graph API error: ${response.status}`);
+  }
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+// ── SHAREPOINT LIST OPERATIONS ──
+async function spGetItems(listName, select = "", filter = "") {
+  let url = `/sites/${SITE_ID}/lists/${listName}/items?expand=fields`;
+  if (select) url += `&$select=${select}`;
+  if (filter) url += `&$filter=${filter}`;
+  const data = await graphCall(url);
+  return data.value.map(i => ({ spId: i.id, ...i.fields }));
+}
+
+async function spCreateItem(listName, fields) {
+  const data = await graphCall(`/sites/${SITE_ID}/lists/${listName}/items`, "POST", { fields });
+  return { spId: data.id, ...data.fields };
+}
+
+async function spUpdateItem(listName, spId, fields) {
+  await graphCall(`/sites/${SITE_ID}/lists/${listName}/items/${spId}/fields`, "PATCH", fields);
+}
+
+async function spDeleteItem(listName, spId) {
+  await graphCall(`/sites/${SITE_ID}/lists/${listName}/items/${spId}`, "DELETE");
+}
+
+// ── DATA CONVERSION: SharePoint fields <-> App format ──
+function spToTask(sp) {
+  return {
+    id: sp.spId,
+    spId: sp.spId,
+    name: sp.Title || sp.Task_x0020_Name || "",
+    category: sp.Category || "Operations",
+    owner: sp.Owner || "",
+    delegatedTo: sp.DelegatedTo || "",
+    status: sp.Status || "Not Started",
+    priority: sp.Priority || "Medium",
+    dueDate: sp.DueDate ? sp.DueDate.split("T")[0] : "",
+    lastUpdate: sp.Modified ? sp.Modified.split("T")[0] : today(),
+    nextAction: sp.NextAction || "",
+    waitingOn: sp.WaitingOn || "",
+    notes: sp.Notes || "",
+    attachments: [],
+    plannerLink: sp.PlannerLink || "",
+  };
+}
+
+function taskToSp(task) {
+  return {
+    Title: task.name,
+    Category: task.category,
+    Owner: task.owner,
+    DelegatedTo: task.delegatedTo || "",
+    Status: task.status,
+    Priority: task.priority,
+    DueDate: task.dueDate || null,
+    NextAction: task.nextAction || "",
+    WaitingOn: task.waitingOn || "",
+    Notes: task.notes || "",
+    PlannerLink: task.plannerLink || "",
+  };
+}
+
+// ── CONSTANTS ──
+const CATS = ['Marketing','Hiring','Operations','Personal HR','Clinical','Finance'];
+const STATUSES = ['Not Started','In Progress','Waiting','Done'];
+const PRIORITIES = ['High','Medium','Low'];
+const CAT_C = {Marketing:'#FF7100',Hiring:'#3088D8',Operations:'#003E82','Personal HR':'#FF9852',Clinical:'#16A34A',Finance:'#8B5CF6'};
+const PRI_C = {High:'#FF7100',Medium:'#3088D8',Low:'#94A3B8'};
+const ST_C = {'Not Started':{bg:'#EFF6FF',text:'#1D4ED8'},'In Progress':{bg:'#FFF7ED',text:'#C2410C'},Waiting:{bg:'#FEFCE8',text:'#A16207'},Done:{bg:'#F0FDF4',text:'#166534'}};
+
+// ── STATE ──
+let S = {
+  // Auth
+  user: null,
+  msAccount: null,
+  authMode: "microsoft", // "microsoft" or "pin" fallback
+  loginError: "",
+  loading: true,
+  loadingMsg: "Signing you in...",
+  syncing: false,
+
+  // App data
+  tasks: [],
+  users: [
+    {name:'Pratik Shah',email:'pratik@imotionpt.com',role:'admin',title:'Owner / CEO',active:true},
+    {name:'Arnel',email:'arnel@imotionpt.com',role:'manager',title:'Executive Assistant',active:true},
+    {name:'Kashmira',email:'kashmira@imotionpt.com',role:'staff',title:'Clinical Director',active:true},
+    {name:'Barkha',email:'barkha@imotionpt.com',role:'staff',title:'Clinical Director',active:true},
+    {name:'Tim',email:'tim@imotionpt.com',role:'staff',title:'EMR Lead',active:true},
+    {name:'Lilla',email:'lilla@imotionpt.com',role:'staff',title:'Staff',active:true},
+    {name:'Sweety',email:'sweety@imotionpt.com',role:'staff',title:'Staff',active:true},
+  ],
+  delegates: ['Arnel','Kashmira','Barkha','Tim','Lilla','Sweety'],
+
+  // UI state
+  view: 'dashboard',
+  expandedId: null,
+  delegateFor: null,
+  showModal: false,
+  editId: null,
+  form: {},
+  fStatus: 'All',
+  fCat: 'All',
+  fPri: 'All',
+  search: '',
+
+  // Briefs
+  brief: {priorities:'',decisions:'',followups:'',stuck:'',submitted:false,time:''},
+  weekly: {wins:'',missed:'',bottlenecks:'',suggestions:'',submitted:false},
+  briefTab: 'fill',
+  weeklyTab: 'daily',
+
+  // Admin
+  newDelegate: '',
+  newUser: {name:'',email:'',role:'staff',title:''},
+  inviteSent: false,
+  config: {
+    outlookUrl:'https://outlook.office.com/calendar',
+    teamsUrl:'',
+    plannerUrl:'',
+    excelWebUrl:'',
+    teamsChannel:''
+  },
+};
+
+function set(patch){Object.assign(S,patch);render();}
+function today(){return new Date().toISOString().split('T')[0];}
+function fmtDate(d){if(!d)return'—';try{return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){return d;}}
+function isOverdue(t){return t.status!=='Done'&&t.dueDate&&new Date(t.dueDate+'T23:59:59')<new Date();}
+function daysSince(d){if(!d)return 0;return Math.floor((Date.now()-new Date(d+'T12:00:00'))/86400000);}
+function canEdit(){return S.user&&['admin','manager'].includes(S.user.role);}
+function isAdmin(){return S.user&&S.user.role==='admin';}
+
+function stats(){
+  return {
+    open:S.tasks.filter(t=>t.status!=='Done').length,
+    overdue:S.tasks.filter(t=>isOverdue(t)).length,
+    waiting:S.tasks.filter(t=>t.status==='Waiting').length,
+    high:S.tasks.filter(t=>t.priority==='High'&&t.status!=='Done').length,
+    delegated:S.tasks.filter(t=>t.delegatedTo&&t.status!=='Done').length,
+    done:S.tasks.filter(t=>t.status==='Done').length,
+    stale:S.tasks.filter(t=>t.status!=='Done'&&daysSince(t.lastUpdate)>=2).length,
+  };
+}
+
+function filtered(){
+  return S.tasks.filter(t=>{
+    if(S.fStatus!=='All'&&t.status!==S.fStatus)return false;
+    if(S.fCat!=='All'&&t.category!==S.fCat)return false;
+    if(S.fPri!=='All'&&t.priority!==S.fPri)return false;
+    if(S.search&&!t.name.toLowerCase().includes(S.search.toLowerCase())&&!(t.notes||'').toLowerCase().includes(S.search.toLowerCase()))return false;
+    return true;
+  });
+}
+
+function emptyForm(){
+  return {name:'',category:'Operations',owner:S.user?S.user.name:'Arnel',delegatedTo:'',status:'Not Started',priority:'Medium',dueDate:'',nextAction:'',waitingOn:'',notes:'',attachments:[],plannerLink:''};
+}
+
+// ── MICROSOFT LOGIN ──
+async function initAuth() {
+  if (!msalInstance) {
+    set({loading:false, authMode:"pin"});
+    return;
+  }
+  try {
+    // Handle redirect response first
+    await msalInstance.handleRedirectPromise();
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      await loginWithAccount(accounts[0]);
+    } else {
+      set({loading:false});
+    }
+  } catch(e) {
+    console.error("Auth init error:", e);
+    set({loading:false, loginError: "Authentication error. Please try again."});
+  }
+}
+
+async function loginWithAccount(account) {
+  set({loading:true, loadingMsg:"Loading your dashboard..."});
+  try {
+    // Get user profile
+    msalInstance.setActiveAccount(account);
+    const me = await graphCall("/me");
+
+    // Match to known users by email
+    const email = me.mail || me.userPrincipalName || "";
+    let matchedUser = S.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (!matchedUser) {
+      // Auto-create user entry if they have Microsoft 365 access
+      matchedUser = {
+        name: me.displayName || email,
+        email: email,
+        role: "viewer",
+        title: me.jobTitle || "",
+        active: true,
+      };
+    }
+
+    if (!matchedUser.active) {
+      set({loading:false, loginError:"Your account has been deactivated. Contact Pratik."});
+      return;
+    }
+
+    // Load tasks from SharePoint
+    set({loadingMsg:"Loading tasks from SharePoint..."});
+    const spTasks = await spGetItems(LISTS.tasks);
+    const tasks = spTasks.map(spToTask);
+
+    // Load config from SharePoint
+    set({loadingMsg:"Loading configuration..."});
+    try {
+      const configItems = await spGetItems(LISTS.config);
+      const config = {...S.config};
+      configItems.forEach(item => {
+        const key = item.Title || item.ConfigKey;
+        const val = item.ConfigValue || "";
+        if(key === "OutlookCalendarUrl") config.outlookUrl = val;
+        else if(key === "TeamsUrl") config.teamsUrl = val;
+        else if(key === "PlannerUrl") config.plannerUrl = val;
+        else if(key === "ExcelTrackerUrl") config.excelWebUrl = val;
+        else if(key === "TeamsNotificationChannel") config.teamsChannel = val;
+        else if(key === "DelegateList" && val) {
+          S.delegates = val.split(",").map(d=>d.trim()).filter(Boolean);
+        }
+      });
+      S.config = config;
+    } catch(e) {
+      console.warn("Could not load config:", e);
+    }
+
+    set({
+      user: matchedUser,
+      msAccount: account,
+      tasks: tasks,
+      loading: false,
+      loginError: "",
+    });
+
+  } catch(e) {
+    console.error("Login error:", e);
+    set({loading:false, loginError:"Could not load data from SharePoint. " + e.message});
+  }
+}
+
+async function doMicrosoftLogin() {
+  try {
+    set({loading:true, loadingMsg:"Redirecting to Microsoft login..."});
+    await msalInstance.loginPopup({ scopes: SCOPES });
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      await loginWithAccount(accounts[0]);
+    }
+  } catch(e) {
+    console.error("Login failed:", e);
+    set({loading:false, loginError:"Login failed. Please try again."});
+  }
+}
+
+async function doSignOut() {
+  if (msalInstance && S.msAccount) {
+    await msalInstance.logoutPopup({ account: S.msAccount });
+  }
+  set({user:null, msAccount:null, tasks:[], loading:false});
+}
+
+// ── TASK CRUD WITH SHAREPOINT ──
+async function saveTask() {
+  const form = S.form;
+  const name = (document.getElementById('mf-name')||{}).value || form.name || '';
+  if(!name.trim()){alert('Please enter a task name.');return;}
+
+  const updated = {
+    ...form,
+    name: (document.getElementById('mf-name')||{}).value || form.name,
+    category: (document.getElementById('mf-cat')||{}).value || form.category,
+    priority: (document.getElementById('mf-pri')||{}).value || form.priority,
+    status: (document.getElementById('mf-status')||{}).value || form.status,
+    dueDate: (document.getElementById('mf-due')||{}).value || form.dueDate,
+    owner: (document.getElementById('mf-owner')||{}).value || form.owner,
+    delegatedTo: (document.getElementById('mf-delegate')||{}).value || "",
+    nextAction: (document.getElementById('mf-next')||{}).value || form.nextAction,
+    waitingOn: (document.getElementById('mf-waiting')||{}).value || form.waitingOn,
+    notes: (document.getElementById('mf-notes')||{}).value || form.notes,
+    plannerLink: (document.getElementById('mf-planner')||{}).value || form.plannerLink || '',
+    lastUpdate: today(),
+  };
+
+  set({syncing:true});
+  try {
+    const spFields = taskToSp(updated);
+    if(S.editId) {
+      // Update existing
+      const task = S.tasks.find(t=>t.id===S.editId);
+      if(task && task.spId) {
+        await spUpdateItem(LISTS.tasks, task.spId, spFields);
+      }
+      set({tasks:S.tasks.map(t=>t.id===S.editId?{...updated,id:S.editId,spId:t.spId}:t),showModal:false,syncing:false});
+    } else {
+      // Create new
+      const created = await spCreateItem(LISTS.tasks, spFields);
+      const newTask = {...updated, id:created.spId, spId:created.spId};
+      set({tasks:[...S.tasks,newTask],showModal:false,syncing:false});
+    }
+  } catch(e) {
+    console.error("Save error:", e);
+    alert("Error saving task: " + e.message);
+    set({syncing:false});
+  }
+}
+
+async function markDone(id) {
+  const task = S.tasks.find(t=>t.id===id);
+  if(!task) return;
+  set({syncing:true, tasks:S.tasks.map(t=>t.id===id?{...t,status:'Done',lastUpdate:today()}:t)});
+  try {
+    if(task.spId) await spUpdateItem(LISTS.tasks, task.spId, {Status:'Done'});
+  } catch(e) { console.error("Mark done error:", e); }
+  set({syncing:false});
+}
+
+async function delTask(id) {
+  if(!confirm('Delete this task?')) return;
+  const task = S.tasks.find(t=>t.id===id);
+  set({tasks:S.tasks.filter(t=>t.id!==id), expandedId:S.expandedId===id?null:S.expandedId, syncing:true});
+  try {
+    if(task && task.spId) await spDeleteItem(LISTS.tasks, task.spId);
+  } catch(e) { console.error("Delete error:", e); }
+  set({syncing:false});
+}
+
+async function delegateTask(id, person) {
+  const task = S.tasks.find(t=>t.id===id);
+  set({syncing:true, tasks:S.tasks.map(t=>t.id===id?{...t,delegatedTo:person,lastUpdate:today()}:t), delegateFor:null});
+  try {
+    if(task && task.spId) await spUpdateItem(LISTS.tasks, task.spId, {DelegatedTo:person});
+  } catch(e) { console.error("Delegate error:", e); }
+  set({syncing:false});
+}
+
+async function submitBrief() {
+  set({syncing:true});
+  try {
+    const now = new Date();
+    await spCreateItem(LISTS.briefs, {
+      Title: `Daily Brief ${today()}`,
+      BriefDate: now.toISOString(),
+      TopPriorities: S.brief.priorities,
+      PendingDecisions: S.brief.decisions,
+      Followups: S.brief.followups,
+      StuckItems: S.brief.stuck,
+      SubmittedAt: now.toISOString(),
+    });
+    set({brief:{...S.brief,submitted:true,time:now.toLocaleTimeString()},briefTab:'view',syncing:false});
+  } catch(e) {
+    console.error("Brief submit error:", e);
+    // Still mark submitted locally even if SP fails
+    set({brief:{...S.brief,submitted:true,time:new Date().toLocaleTimeString()},briefTab:'view',syncing:false});
+  }
+}
+
+async function submitWeekly() {
+  set({syncing:true});
+  try {
+    const now = new Date();
+    await spCreateItem(LISTS.weekly, {
+      Title: `Weekly Review ${today()}`,
+      WeekOf: now.toISOString(),
+      Wins: S.weekly.wins,
+      MissedTasks: S.weekly.missed,
+      Bottlenecks: S.weekly.bottlenecks,
+      Suggestions: S.weekly.suggestions,
+      SubmittedAt: now.toISOString(),
+    });
+    set({weekly:{...S.weekly,submitted:true},syncing:false});
+  } catch(e) {
+    console.error("Weekly submit error:", e);
+    set({weekly:{...S.weekly,submitted:true},syncing:false});
+  }
+}
+
+async function refreshTasks() {
+  set({syncing:true});
+  try {
+    const spTasks = await spGetItems(LISTS.tasks);
+    set({tasks:spTasks.map(spToTask),syncing:false});
+  } catch(e) {
+    console.error("Refresh error:", e);
+    set({syncing:false});
+  }
+}
+
+// ── RENDER ──
+function render(){
+  const root = document.getElementById('root');
+
+  if(S.loading) {
+    root.innerHTML = `<div class="loading-screen">
+      <div class="loading-spinner"></div>
+      <div style="color:#fff;font-size:14px;font-weight:500">${esc(S.loadingMsg)}</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:8px">iMotion Physical Therapy</div>
+    </div>`;
+    return;
+  }
+
+  if(!S.user) {
+    root.innerHTML = `<div class="login-wrap" style="margin-left:0">${loginHTML()}</div>`;
+    attachLoginEvents();
+    return;
+  }
+
+  const st = stats();
+  let content = '';
+  if(S.view==='dashboard') content = dashHTML(st);
+  else if(S.view==='tasks') content = allTasksHTML();
+  else if(S.view==='open') content = openHTML();
+  else if(S.view==='delegated') content = delegatedHTML(st);
+  else if(S.view==='brief') content = briefHTML();
+  else if(S.view==='admin'&&isAdmin()) content = adminHTML();
+
+  root.innerHTML = `
+    <div class="app">
+      ${sidebarHTML(st)}
+      <div class="main">${content}</div>
+    </div>
+    ${S.showModal ? modalHTML() : ''}
+  `;
+  attachEvents();
+}
+
+function loginHTML(){
+  return `<div class="login-box">
+    <div class="login-logo">
+      <svg width="44" height="44" viewBox="0 0 36 36" fill="none">
+        <circle cx="20" cy="7" r="5" fill="#FF7100"/>
+        <path d="M6 24 Q13 14 20 18 Q26 22 30 32" stroke="#FF7100" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M3 20 Q10 16 18 18" stroke="#FF7100" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div style="font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:22px;color:#003E82;margin-top:8px">iMotion PT</div>
+      <div style="font-size:13px;color:#475569;margin-top:3px">Executive Assistant Dashboard</div>
+    </div>
+    ${S.loginError?`<div class="alert alert-red" style="margin-bottom:16px">${esc(S.loginError)}</div>`:''}
+    <button id="li-ms-btn" style="width:100%;background:#003E82;color:#fff;border:none;border-radius:8px;padding:14px 0;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px">
+      <svg width="20" height="20" viewBox="0 0 21 21" fill="none"><rect width="10" height="10" fill="#F25022"/><rect x="11" width="10" height="10" fill="#7FBA00"/><rect y="11" width="10" height="10" fill="#00A4EF"/><rect x="11" y="11" width="10" height="10" fill="#FFB900"/></svg>
+      Sign in with Microsoft 365
+    </button>
+    <div style="font-size:11px;color:#94A3B8;text-align:center">Use your iMotion Microsoft 365 account</div>
+    <div style="font-size:11px;color:#94A3B8;text-align:center;margin-top:4px">Access restricted to iMotion team members only</div>
+  </div>`;
+}
+
+function attachLoginEvents(){
+  const msBtn = document.getElementById('li-ms-btn');
+  if(msBtn) msBtn.addEventListener('click', doMicrosoftLogin);
+}
+
+function sidebarHTML(st){
+  const navs=[
+    {id:'dashboard',label:'Dashboard',icon:'▦'},
+    {id:'tasks',label:'All Tasks',icon:'≡'},
+    {id:'open',label:'Open Items',icon:'◎'},
+    {id:'delegated',label:'Delegated',icon:'↗',badge:st.delegated},
+    {id:'brief',label:'Daily Brief',icon:'☀'},
+    ...(isAdmin()?[{id:'admin',label:'Admin Panel',icon:'⚙'}]:[]),
+  ];
+  const cfg=S.config;
+  const links=[
+    {label:'📅 Outlook Calendar',url:cfg.outlookUrl},
+    {label:'💬 Microsoft Teams',url:cfg.teamsUrl},
+    {label:'📋 Microsoft Planner',url:cfg.plannerUrl},
+    {label:'📊 Excel Tracker',url:cfg.excelWebUrl},
+  ];
+  return `<div class="sidebar">
+    <div class="logo">
+      <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+        <circle cx="20" cy="7" r="5" fill="#FF7100"/>
+        <path d="M6 24 Q13 14 20 18 Q26 22 30 32" stroke="#FF7100" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M3 20 Q10 16 18 18" stroke="#FF7100" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="logo-name">iMotion PT</div>
+      <div class="logo-sub">Executive Assistant Dashboard</div>
+    </div>
+    <div class="user-pill">
+      <div class="avatar">${S.user.name[0]}</div>
+      <div>
+        <div class="user-name">${esc(S.user.name)}</div>
+        <div class="user-role">${S.user.role} ${S.syncing?'· saving...':''}</div>
+      </div>
+    </div>
+    <div class="nav">
+      ${navs.map(n=>`<button class="nav-btn${S.view===n.id?' active':''}" data-view="${n.id}">
+        <span style="opacity:0.7;font-size:14px">${n.icon}</span>${n.label}
+        ${(n.badge||0)>0?`<span class="nav-badge">${n.badge}</span>`:''}
+      </button>`).join('')}
+    </div>
+    <div class="quick-links">
+      <div class="ql-title">Quick Links</div>
+      ${links.map(l=>l.url
+        ?`<a class="ql-link" href="${l.url}" target="_blank">${l.label}</a>`
+        :`<span class="ql-empty">${l.label}</span>`
+      ).join('')}
+    </div>
+    <div class="sb-bottom">
+      <button class="btn-export" id="btn-export">${cfg.excelWebUrl?'📊 Open Excel Tracker':'⬇ Export CSV Report'}</button>
+      <button class="btn-export" id="btn-refresh" style="color:rgba(255,255,255,0.5)">🔄 Refresh Tasks</button>
+      ${canEdit()?`<button class="btn-orange" id="btn-add-task">+ New Task</button>`:''}
+      <button class="btn-signout" id="btn-signout">Sign Out</button>
+    </div>
+  </div>`;
+}
+
+function taskCardHTML(t){
+  const over=isOverdue(t);
+  const stale=daysSince(t.lastUpdate)>=2&&t.status!=='Done';
+  const exp=S.expandedId===t.id;
+  const delOpen=S.delegateFor===t.id;
+  const cc=CAT_C[t.category]||'#888';
+  const sc=ST_C[t.status]||ST_C['Not Started'];
+  const pc=PRI_C[t.priority]||'#ccc';
+  return `<div class="task-card" style="border-left-color:${pc};${over?'border-color:#FECACA;':''}">
+    <div class="task-row" data-expand="${t.id}">
+      <div style="flex:1;min-width:0">
+        <div class="task-name${t.status==='Done'?' done':''}">${esc(t.name)}</div>
+        <div class="task-meta">
+          <span>${esc(t.owner)}</span>
+          ${t.delegatedTo?`<span style="color:#3088D8;font-weight:600">→ ${esc(t.delegatedTo)}</span>`:''}
+          <span>· Due ${fmtDate(t.dueDate)}</span>
+          ${over?`<span style="color:#DC2626;font-weight:700">OVERDUE</span>`:''}
+          ${stale&&!over?`<span style="color:#D97706">No update ${daysSince(t.lastUpdate)}d</span>`:''}
+          ${(t.attachments||[]).length>0?`<span style="color:#3088D8">📎 ${t.attachments.length}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+        <span class="badge" style="background:${cc}18;color:${cc}">${esc(t.category)}</span>
+        <span class="badge" style="background:${sc.bg};color:${sc.text}">${esc(t.status)}</span>
+      </div>
+      ${canEdit()?`<div class="task-actions" data-stop="1">
+        ${t.status!=='Done'?`<button class="task-btn" style="color:#16A34A;border-color:#BBF7D0" data-done="${t.id}" title="Mark done">✓</button>`:''}
+        <button class="task-btn" style="color:#1D4ED8;border-color:#BFDBFE" data-delopen="${t.id}" title="Delegate">↗</button>
+        <button class="task-btn" style="color:#475569" data-edit="${t.id}" title="Edit">✎</button>
+        <button class="task-btn" style="color:#DC2626;border-color:#FECACA" data-del="${t.id}" title="Delete">✕</button>
+      </div>`:''}
+    </div>
+    ${delOpen?delegatePanelHTML(t):''}
+    ${exp?expandHTML(t):''}
+  </div>`;
+}
+
+function delegatePanelHTML(t){
+  const chips=S.delegates.length===0
+    ?`<span class="chip empty-msg">No delegates. Add in Admin Panel.</span>`
+    :S.delegates.map(m=>`<button class="chip${t.delegatedTo===m?' active-chip':''}" data-delegate="${t.id}" data-person="${esc(m)}">${esc(m)}</button>`).join('');
+  const remove=t.delegatedTo?`<button class="chip remove-chip" data-delegate="${t.id}" data-person="">Remove</button>`:'';
+  return `<div class="delegate-panel" data-stop="1">
+    <span class="delegate-panel-title">Delegate to:</span>
+    ${chips}${remove}
+  </div>`;
+}
+
+function expandHTML(t){
+  return `<div class="expand-detail">
+    <div><div class="expand-label">Next Action</div><div class="expand-val">${esc(t.nextAction)||'—'}</div></div>
+    <div><div class="expand-label">Waiting On</div><div class="expand-val">${esc(t.waitingOn)||'—'}</div></div>
+    <div style="grid-column:1/-1"><div class="expand-label">Notes</div><div class="expand-val">${esc(t.notes)||'—'}</div></div>
+    <div><div class="expand-label">Last Update</div><div class="expand-val">${fmtDate(t.lastUpdate)}</div></div>
+    <div><div class="expand-label">Due Date</div><div class="expand-val">${fmtDate(t.dueDate)}</div></div>
+  </div>`;
+}
+
+function taskListHTML(tasks){
+  if(!tasks||!tasks.length)return`<div class="no-tasks">No tasks here. 🎉</div>`;
+  return tasks.map(taskCardHTML).join('');
+}
+
+function secHead(label,color){
+  return `<div class="sec-head"><div class="sec-bar" style="background:${color}"></div><span style="color:${color}">${label}</span></div>`;
+}
+
+function dashHTML(st){
+  const hi=S.tasks.filter(t=>t.priority==='High'&&t.status!=='Done');
+  const wa=S.tasks.filter(t=>t.status==='Waiting');
+  return `<div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div class="page-title">Good morning, ${esc(S.user.name.split(' ')[0])} 👋</div>
+      ${S.syncing?`<span style="font-size:11px;color:#FF7100;font-weight:600">● Saving...</span>`:`<span style="font-size:11px;color:#16A34A;font-weight:600">● Synced</span>`}
+    </div>
+    <div class="page-sub">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</div>
+    <div class="stat-grid">
+      ${[['Open',st.open,'#003E82'],['High Priority',st.high,'#FF7100'],['Overdue',st.overdue,'#DC2626'],['Waiting',st.waiting,'#D97706'],['Delegated',st.delegated,'#3088D8'],['Done',st.done,'#16A34A']].map(([l,v,c])=>`
+        <div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val" style="color:${c}">${v}</div></div>
+      `).join('')}
+    </div>
+    ${st.overdue>0?`<div class="alert alert-red">⚠️ ${st.overdue} overdue task${st.overdue>1?'s':''} — needs immediate attention.</div>`:''}
+    ${st.stale>0?`<div class="alert alert-amber">🕐 ${st.stale} task${st.stale>1?'s':''} not updated in 48+ hours.</div>`:''}
+    ${S.tasks.length===0?`<div class="alert alert-blue">📋 No tasks yet. Click "+ New Task" to add your first task — it will save directly to SharePoint.</div>`:''}
+    ${secHead('High Priority · Active','#FF7100')}
+    ${taskListHTML(hi)}
+    ${wa.length?secHead('Waiting On External','#D97706')+taskListHTML(wa):''}
+  </div>`;
+}
+
+function allTasksHTML(){
+  return `<div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div class="page-title">All Tasks</div>
+      ${canEdit()?`<button class="btn-orange" id="btn-add-task2" style="width:auto;padding:9px 18px">+ New Task</button>`:''}
+    </div>
+    <div class="search-row">
+      <input id="f-search" placeholder="Search tasks..." value="${esc(S.search)}" style="flex:1;min-width:140px"/>
+      <select id="f-status">${['All',...STATUSES].map(o=>`<option${S.fStatus===o?' selected':''}>${o}</option>`).join('')}</select>
+      <select id="f-cat">${['All',...CATS].map(o=>`<option${S.fCat===o?' selected':''}>${o}</option>`).join('')}</select>
+      <select id="f-pri">${['All',...PRIORITIES].map(o=>`<option${S.fPri===o?' selected':''}>${o}</option>`).join('')}</select>
+    </div>
+    ${taskListHTML(filtered())}
+  </div>`;
+}
+
+function openHTML(){
+  const over=S.tasks.filter(t=>isOverdue(t));
+  return `<div>
+    <div class="page-title">Open Items</div>
+    <div class="page-sub">Arnel's primary daily view — all active and pending tasks.</div>
+    ${over.length?secHead('⚠ Overdue','#DC2626')+taskListHTML(over):''}
+    ${['High','Medium','Low'].map(p=>{
+      const pt=S.tasks.filter(t=>t.status!=='Done'&&t.priority===p&&!isOverdue(t));
+      return pt.length?secHead(`${p} Priority`,PRI_C[p])+taskListHTML(pt):'';
+    }).join('')}
+  </div>`;
+}
+
+function delegatedHTML(st){
+  const rows=S.delegates.map(m=>{
+    const mt=S.tasks.filter(t=>t.delegatedTo===m&&t.status!=='Done');
+    if(!mt.length)return'';
+    return `<div style="margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+        <div class="avatar">${m[0]}</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#003E82">${esc(m)}</div>
+          <div style="font-size:11px;color:#94A3B8">${mt.length} task${mt.length>1?'s':''}</div>
+        </div>
+      </div>
+      ${taskListHTML(mt)}
+    </div>`;
+  }).join('');
+  return `<div>
+    <div class="page-title">Delegated Tasks</div>
+    <div class="page-sub">Tasks assigned to team members.</div>
+    ${rows||'<div class="no-tasks">No delegated tasks currently open. 🎉</div>'}
+  </div>`;
+}
+
+function briefHTML(){
+  const {brief,weekly,briefTab,weeklyTab}=S;
+  const todayLabel=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  return `<div style="max-width:660px">
+    <div class="page-title">Briefs</div>
+    <div class="page-sub">Daily brief saves to SharePoint. Weekly review every Friday.</div>
+    <div class="tab-bar">
+      <button class="tab${weeklyTab==='daily'?' active':''}" data-wtab="daily">Daily Brief</button>
+      <button class="tab${weeklyTab==='weekly'?' active':''}" data-wtab="weekly">Weekly Review</button>
+    </div>
+    ${weeklyTab==='daily'?`
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <button class="tab${briefTab==='fill'?' active':''}" data-btab="fill">Fill Brief</button>
+        <button class="tab${briefTab==='view'?' active':''}" data-btab="view">View Submitted</button>
+        ${S.config.teamsChannel?`<a href="${S.config.teamsChannel}" target="_blank" style="margin-left:auto;background:#3088D8;color:#fff;text-decoration:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600">💬 Post to Teams</a>`:''}
+      </div>
+      ${briefTab==='fill'?`
+        <div class="card">
+          <div style="font-size:12px;color:#475569;margin-bottom:18px;font-weight:500">📅 ${todayLabel}</div>
+          ${[['priorities','Top 3 Priorities Today'],['decisions','Decisions Needed from Pratik'],['followups','Follow-ups in Progress'],['stuck','Stuck or Delayed Items']].map(([k,l])=>`
+            <div class="brief-field"><label>${l}</label>
+            <textarea data-brief="${k}" rows="3" placeholder="${l}...">${esc(brief[k])}</textarea></div>
+          `).join('')}
+          <button class="submit-btn" id="btn-brief-submit">✓ Submit Daily Brief → Saves to SharePoint</button>
+        </div>
+      `:`
+        <div class="card">
+          ${!brief.submitted?`<div style="font-size:13px;color:#94A3B8;text-align:center;padding:28px 0">No brief submitted yet today.</div>`:`
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+              <div style="font-size:15px;font-weight:700;color:#003E82">Daily Brief</div>
+              <span class="badge" style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0">✓ Submitted ${esc(brief.time)}</span>
+            </div>
+            ${[['priorities','🎯','Top 3 Priorities'],['decisions','🧠','Decisions Needed'],['followups','📞','Follow-ups'],['stuck','⛔','Stuck/Delayed']].map(([k,ic,l])=>`
+              <div style="margin-bottom:13px">
+                <div style="font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px">${ic} ${l}</div>
+                <div style="font-size:13px;background:#F8FAFC;border-radius:8px;padding:9px 13px;line-height:1.7;white-space:pre-wrap">${esc(brief[k])||'<em style="color:#94A3B8">Nothing noted.</em>'}</div>
+              </div>
+            `).join('')}
+          `}
+        </div>
+      `}
+    `:`
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;color:#003E82;margin-bottom:18px">Weekly Review</div>
+        ${[['wins','Wins This Week 🏆'],['missed','Missed or Delayed'],['bottlenecks','Bottlenecks'],['suggestions','Suggestions for Improvement']].map(([k,l])=>`
+          <div class="brief-field"><label>${l}</label>
+          <textarea data-weekly="${k}" rows="3" placeholder="${l}...">${esc(weekly[k])}</textarea></div>
+        `).join('')}
+        <button class="submit-btn" id="btn-weekly-submit">✓ Submit Weekly Review → Saves to SharePoint</button>
+        ${weekly.submitted?`<div class="success-note">✓ Weekly review submitted and saved to SharePoint!</div>`:''}
+      </div>
+    `}
+  </div>`;
+}
+
+function adminHTML(){
+  const {delegates,users,newDelegate,newUser,inviteSent,config}=S;
+  return `<div>
+    <div class="page-title">Admin Panel</div>
+    <div class="page-sub">Manage team access, delegate list, and system configuration.</div>
+
+    <div class="admin-highlight">
+      <div style="font-size:14px;font-weight:800;color:#003E82;margin-bottom:3px">Delegate List Manager</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:14px">Control who appears in the "Delegate To" dropdown on every task.</div>
+      <div style="margin-bottom:14px;min-height:34px">
+        ${delegates.length===0?`<span style="font-size:12px;color:#94A3B8;font-style:italic">No delegates configured yet.</span>`:''}
+        ${delegates.map(d=>`<span class="delegate-tag"><span>${esc(d)}</span><button data-rem-delegate="${esc(d)}">✕</button></span>`).join('')}
+      </div>
+      <div class="add-row">
+        <input id="new-delegate-input" placeholder="Type a name to add..." value="${esc(newDelegate)}"/>
+        <button class="add-btn" id="btn-add-delegate">+ Add</button>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:9px">Quick add from team</div>
+      <div>
+        ${users.filter(u=>u.active).map(u=>`<button class="team-toggle${delegates.includes(u.name)?' on':''}" data-toggle-delegate="${esc(u.name)}">
+          ${delegates.includes(u.name)?'✓ ':''} ${esc(u.name)}
+        </button>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;color:#003E82;margin-bottom:14px">Team Members & Access</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Title</th><th>Role</th><th>In Delegate List</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            ${users.map(u=>`<tr>
+              <td><span class="member-avatar">${u.name[0]}</span><strong>${esc(u.name)}</strong></td>
+              <td style="color:#475569">${esc(u.email)}</td>
+              <td style="color:#475569">${esc(u.title)}</td>
+              <td><select data-role="${esc(u.email)}" style="font-size:11px;padding:3px 7px;border-radius:6px;border:1px solid #E2E8F0;background:#fff">
+                ${['admin','manager','staff','viewer'].map(r=>`<option value="${r}"${u.role===r?' selected':''}>${r}</option>`).join('')}
+              </select></td>
+              <td style="text-align:center">
+                <button data-toggle-delegate="${esc(u.name)}" style="font-size:10px;font-weight:600;padding:3px 11px;border-radius:10px;cursor:pointer;border:1px solid ${delegates.includes(u.name)?'#BBF7D0':'#E2E8F0'};background:${delegates.includes(u.name)?'#F0FDF4':'#F8FAFC'};color:${delegates.includes(u.name)?'#166534':'#94A3B8'}">
+                  ${delegates.includes(u.name)?'✓ Yes':'Add'}
+                </button>
+              </td>
+              <td><span class="badge" style="background:${u.active?'#F0FDF4':'#FEF2F2'};color:${u.active?'#166534':'#DC2626'}">${u.active?'Active':'Inactive'}</span></td>
+              <td><button data-toggle-active="${esc(u.email)}" style="font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid #E2E8F0;background:#F8FAFC;color:#475569">${u.active?'Deactivate':'Activate'}</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;color:#003E82;margin-bottom:14px">Invite New Member</div>
+        <div class="field"><label>Full Name</label><input id="nu-name" value="${esc(newUser.name)}" placeholder="Jane Smith"/></div>
+        <div class="field"><label>Email</label><input id="nu-email" value="${esc(newUser.email)}" placeholder="jane@imotionpt.com"/></div>
+        <div class="field"><label>Job Title</label><input id="nu-title" value="${esc(newUser.title)}" placeholder="Front Desk Coordinator"/></div>
+        <div class="field"><label>Role</label>
+          <select id="nu-role">${['admin','manager','staff','viewer'].map(r=>`<option value="${r}"${newUser.role===r?' selected':''}>${r}</option>`).join('')}</select>
+        </div>
+        <button class="submit-btn" id="btn-invite">📧 Add Team Member</button>
+        ${inviteSent?`<div class="success-note">✓ Team member added!</div>`:''}
+      </div>
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;color:#003E82;margin-bottom:14px">System Links</div>
+        ${[['outlookUrl','Outlook Calendar URL','https://outlook.office.com/calendar'],
+           ['teamsUrl','Microsoft Teams URL','https://teams.microsoft.com/...'],
+           ['teamsChannel','Teams Notification Channel','https://teams.microsoft.com/l/channel/...'],
+           ['plannerUrl','Microsoft Planner URL','https://tasks.office.com/...'],
+           ['excelWebUrl','Excel Web Tracker (SharePoint)','https://imotionpt.sharepoint.com/...']
+        ].map(([k,l,ph])=>`<div class="field"><label>${l}</label>
+          <input data-cfg="${k}" value="${esc(config[k])}" placeholder="${ph}"/>
+        </div>`).join('')}
+        <div style="background:#F8FAFC;border-radius:8px;padding:10px 13px;font-size:11px;color:#475569">
+          💡 Links save locally for this session. For permanent storage, update iMotion_AppConfig in SharePoint.
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function modalHTML(){
+  const{form,editId,delegates,users}=S;
+  const isEdit=!!editId;
+  const atts=(form.attachments||[]);
+  return `<div class="modal-bg" id="modal-bg">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">${isEdit?'Edit Task':'New Task'}</div>
+        <button class="close-btn" id="btn-modal-close">✕</button>
+      </div>
+      <div class="grid2">
+        <div class="field full"><label>Task Name *</label><input id="mf-name" value="${esc(form.name||'')}"/></div>
+        <div class="field"><label>Category</label><select id="mf-cat">${CATS.map(c=>`<option${form.category===c?' selected':''}>${c}</option>`).join('')}</select></div>
+        <div class="field"><label>Priority</label><select id="mf-pri">${PRIORITIES.map(p=>`<option${form.priority===p?' selected':''}>${p}</option>`).join('')}</select></div>
+        <div class="field"><label>Status</label><select id="mf-status">${STATUSES.map(s=>`<option${form.status===s?' selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>Due Date</label><input type="date" id="mf-due" value="${esc(form.dueDate||'')}"/></div>
+        <div class="field"><label>Owner</label><select id="mf-owner">${users.filter(u=>u.active).map(u=>`<option value="${esc(u.name)}"${form.owner===u.name?' selected':''}>${esc(u.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>Delegate To</label><select id="mf-delegate">
+          <option value="">— Not Delegated —</option>
+          ${delegates.map(d=>`<option value="${esc(d)}"${form.delegatedTo===d?' selected':''}>${esc(d)}</option>`).join('')}
+        </select></div>
+        <div class="field full"><label>Next Action</label><input id="mf-next" value="${esc(form.nextAction||'')}" placeholder="Immediate next step to move this forward"/></div>
+        <div class="field full"><label>Waiting On</label><input id="mf-waiting" value="${esc(form.waitingOn||'')}" placeholder="Person or entity blocking this task"/></div>
+        <div class="field full"><label>Notes</label><textarea id="mf-notes" rows="3">${esc(form.notes||'')}</textarea></div>
+        <div class="field full"><label>Planner Task Link</label><input id="mf-planner" value="${esc(form.plannerLink||'')}" placeholder="Paste Planner task URL..."/></div>
+        <div class="field full">
+          <label>Attachments</label>
+          <div class="file-drop" id="file-drop">
+            <div style="font-size:22px;margin-bottom:4px">📎</div>
+            <div style="font-size:13px;color:#475569;font-weight:500">Click to attach files</div>
+            <div style="font-size:11px;color:#94A3B8;margin-top:2px">PDF, DOCX, XLSX, images</div>
+            <input type="file" id="file-input" multiple style="display:none"/>
+          </div>
+          ${atts.map((a,i)=>`<div class="attach-item">
+            <span style="font-size:16px">📄</span>
+            <div style="flex:1;min-width:0"><div class="attach-name">${esc(a.name)}</div><div class="attach-size">${esc(a.size)}</div></div>
+            <button class="attach-remove" data-rem-att="${i}">✕</button>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="save-btn" id="btn-save">${isEdit?'Save Changes':'Add Task → Saves to SharePoint'}</button>
+        <button class="cancel-btn" id="btn-modal-close2">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function attachEvents(){
+  document.querySelectorAll('[data-view]').forEach(el=>{
+    el.addEventListener('click',()=>set({view:el.dataset.view,delegateFor:null,expandedId:null}));
+  });
+  const bAdd=document.getElementById('btn-add-task');
+  if(bAdd)bAdd.addEventListener('click',()=>set({showModal:true,editId:null,form:emptyForm()}));
+  const bAdd2=document.getElementById('btn-add-task2');
+  if(bAdd2)bAdd2.addEventListener('click',()=>set({showModal:true,editId:null,form:emptyForm()}));
+  const bOut=document.getElementById('btn-signout');
+  if(bOut)bOut.addEventListener('click',doSignOut);
+  const bExp=document.getElementById('btn-export');
+  if(bExp)bExp.addEventListener('click',exportData);
+  const bRef=document.getElementById('btn-refresh');
+  if(bRef)bRef.addEventListener('click',refreshTasks);
+
+  document.querySelectorAll('[data-expand]').forEach(el=>{
+    el.addEventListener('click',()=>{const id=el.dataset.expand;set({expandedId:S.expandedId===id?null:id});});
+  });
+  document.querySelectorAll('[data-stop]').forEach(el=>{
+    el.addEventListener('click',e=>e.stopPropagation());
+  });
+  document.querySelectorAll('[data-done]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();markDone(el.dataset.done);});
+  });
+  document.querySelectorAll('[data-del]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();delTask(el.dataset.del);});
+  });
+  document.querySelectorAll('[data-edit]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();const t=S.tasks.find(t=>t.id===el.dataset.edit);if(t)set({showModal:true,editId:el.dataset.edit,form:{...t}});});
+  });
+  document.querySelectorAll('[data-delopen]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();const id=el.dataset.delopen;set({delegateFor:S.delegateFor===id?null:id});});
+  });
+  document.querySelectorAll('[data-delegate]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();delegateTask(el.dataset.delegate,el.dataset.person);});
+  });
+  document.querySelectorAll('[data-btab]').forEach(el=>{el.addEventListener('click',()=>set({briefTab:el.dataset.btab}));});
+  document.querySelectorAll('[data-wtab]').forEach(el=>{el.addEventListener('click',()=>set({weeklyTab:el.dataset.wtab}));});
+  document.querySelectorAll('[data-brief]').forEach(el=>{el.addEventListener('input',()=>{S.brief[el.dataset.brief]=el.value;});});
+  document.querySelectorAll('[data-weekly]').forEach(el=>{el.addEventListener('input',()=>{S.weekly[el.dataset.weekly]=el.value;});});
+
+  const bBrief=document.getElementById('btn-brief-submit');
+  if(bBrief)bBrief.addEventListener('click',submitBrief);
+  const bWeekly=document.getElementById('btn-weekly-submit');
+  if(bWeekly)bWeekly.addEventListener('click',submitWeekly);
+
+  const fSearch=document.getElementById('f-search');
+  if(fSearch)fSearch.addEventListener('input',e=>set({search:e.target.value}));
+  const fStatus=document.getElementById('f-status');
+  if(fStatus)fStatus.addEventListener('change',e=>set({fStatus:e.target.value}));
+  const fCat=document.getElementById('f-cat');
+  if(fCat)fCat.addEventListener('change',e=>set({fCat:e.target.value}));
+  const fPri=document.getElementById('f-pri');
+  if(fPri)fPri.addEventListener('change',e=>set({fPri:e.target.value}));
+
+  document.querySelectorAll('[data-rem-delegate]').forEach(el=>{
+    el.addEventListener('click',()=>{const n=el.dataset.remDelegate;set({delegates:S.delegates.filter(d=>d!==n)});});
+  });
+  document.querySelectorAll('[data-toggle-delegate]').forEach(el=>{
+    el.addEventListener('click',()=>{const n=el.dataset.toggleDelegate;set({delegates:S.delegates.includes(n)?S.delegates.filter(d=>d!==n):[...S.delegates,n]});});
+  });
+  const bAddDel=document.getElementById('btn-add-delegate');
+  if(bAddDel)bAddDel.addEventListener('click',addDelegate);
+  const ndInput=document.getElementById('new-delegate-input');
+  if(ndInput){
+    ndInput.addEventListener('input',e=>S.newDelegate=e.target.value);
+    ndInput.addEventListener('keydown',e=>{if(e.key==='Enter')addDelegate();});
+  }
+  document.querySelectorAll('[data-toggle-active]').forEach(el=>{
+    el.addEventListener('click',()=>{const em=el.dataset.toggleActive;set({users:S.users.map(u=>u.email===em?{...u,active:!u.active}:u)});});
+  });
+  document.querySelectorAll('[data-role]').forEach(el=>{
+    el.addEventListener('change',()=>{const em=el.dataset.role;set({users:S.users.map(u=>u.email===em?{...u,role:el.value}:u)});});
+  });
+  const bInvite=document.getElementById('btn-invite');
+  if(bInvite)bInvite.addEventListener('click',sendInvite);
+  document.querySelectorAll('[data-cfg]').forEach(el=>{
+    el.addEventListener('input',()=>{S.config[el.dataset.cfg]=el.value;});
+  });
+  ['nu-name','nu-email','nu-title'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener('input',()=>{const key={'nu-name':'name','nu-email':'email','nu-title':'title'}[id];S.newUser[key]=el.value;});
+  });
+  const nuRole=document.getElementById('nu-role');
+  if(nuRole)nuRole.addEventListener('change',()=>S.newUser.role=nuRole.value);
+
+  const mbg=document.getElementById('modal-bg');
+  if(mbg)mbg.addEventListener('click',e=>{if(e.target===mbg)set({showModal:false});});
+  const bClose=document.getElementById('btn-modal-close');
+  if(bClose)bClose.addEventListener('click',()=>set({showModal:false}));
+  const bClose2=document.getElementById('btn-modal-close2');
+  if(bClose2)bClose2.addEventListener('click',()=>set({showModal:false}));
+  const bSave=document.getElementById('btn-save');
+  if(bSave)bSave.addEventListener('click',saveTask);
+
+  document.querySelectorAll('[data-rem-att]').forEach(el=>{
+    el.addEventListener('click',()=>{const i=parseInt(el.dataset.remAtt);S.form.attachments=S.form.attachments.filter((_,j)=>j!==i);render();});
+  });
+  const fileDrop=document.getElementById('file-drop');
+  const fileInput=document.getElementById('file-input');
+  if(fileDrop&&fileInput){
+    fileDrop.addEventListener('click',()=>fileInput.click());
+    fileInput.addEventListener('change',e=>{
+      const files=Array.from(e.target.files);
+      S.form.attachments=[...(S.form.attachments||[]),...files.map(f=>({name:f.name,size:(f.size/1024).toFixed(1)+' KB'}))];
+      render();
+    });
+  }
+}
+
+function addDelegate(){
+  const input=document.getElementById('new-delegate-input');
+  const name=(input?input.value:S.newDelegate).trim();
+  if(!name||S.delegates.includes(name))return;
+  set({delegates:[...S.delegates,name],newDelegate:''});
+}
+
+function sendInvite(){
+  const nu=S.newUser;
+  const name=(document.getElementById('nu-name')||{}).value||nu.name;
+  const email=(document.getElementById('nu-email')||{}).value||nu.email;
+  const title=(document.getElementById('nu-title')||{}).value||nu.title;
+  const role=(document.getElementById('nu-role')||{}).value||nu.role;
+  if(!name||!email){alert('Please enter name and email.');return;}
+  set({users:[...S.users,{name,email,role,title,active:true}],newUser:{name:'',email:'',role:'staff',title:''},inviteSent:true});
+  setTimeout(()=>set({inviteSent:false}),3000);
+}
+
+function exportData(){
+  if(S.config.excelWebUrl){window.open(S.config.excelWebUrl,'_blank');return;}
+  const rows=[['Task','Category','Owner','Delegated To','Status','Priority','Due Date','Next Action','Waiting On','Notes']];
+  S.tasks.forEach(t=>rows.push([t.name,t.category,t.owner,t.delegatedTo,t.status,t.priority,t.dueDate,t.nextAction,t.waitingOn,t.notes]));
+  const csv=rows.map(r=>r.map(c=>`"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iMotion_Tasks.csv';a.click();
+}
+
+function esc(s){
+  if(s===null||s===undefined)return'';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── START ──
+render();
+initAuth();
+</script>
+</body>
+</html>
