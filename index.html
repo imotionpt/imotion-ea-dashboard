@@ -415,11 +415,11 @@ async function loginWithAccount(account) {
       configItems.forEach(item => {
         const key = item.Title || item.ConfigKey;
         const val = item.ConfigValue || "";
-        if(key === "OutlookCalendarUrl") config.outlookUrl = val;
-        else if(key === "TeamsUrl") config.teamsUrl = val;
-        else if(key === "PlannerUrl") config.plannerUrl = val;
-        else if(key === "ExcelTrackerUrl") config.excelWebUrl = val;
-        else if(key === "TeamsNotificationChannel") config.teamsChannel = val;
+        if(key === "OutlookCalendarUrl" && val) config.outlookUrl = val;
+        else if(key === "TeamsUrl" && val) config.teamsUrl = val;
+        else if(key === "PlannerUrl" && val) config.plannerUrl = val;
+        else if(key === "ExcelTrackerUrl" && val) config.excelWebUrl = val;
+        else if(key === "TeamsNotificationChannel" && val) config.teamsChannel = val;
         else if(key === "DelegateList" && val) {
           S.delegates = val.split(",").map(d=>d.trim()).filter(Boolean);
         }
