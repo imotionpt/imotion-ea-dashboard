@@ -241,16 +241,12 @@ function spToTask(sp) {
 function taskToSp(task) {
   return {
     Title: task.name,
-    Category: task.category || "",
-    Owner: task.owner || "",
-    DelegatedTo: task.delegatedTo || "",
     Status: task.status || "Not Started",
     Priority: task.priority || "Medium",
     DueDate: task.dueDate || null,
     NextAction: task.nextAction || "",
     WaitingOn: task.waitingOn || "",
     Notes: task.notes || "",
-    PlannerLink: task.plannerLink || "",
   };
 }
 
