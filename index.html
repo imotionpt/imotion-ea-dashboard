@@ -312,11 +312,11 @@ let S = {
   newUser: {name:'',email:'',role:'staff',title:''},
   inviteSent: false,
   config: {
-    outlookUrl:'https://outlook.office.com/calendar',
-    teamsUrl:'',
-    plannerUrl:'',
-    excelWebUrl:'',
-    teamsChannel:''
+    outlookUrl: 'https://outlook.office.com/calendar',
+    teamsUrl: 'https://teams.microsoft.com/l/channel/19%3ANgx-Dzy8Y7qB1mfK7olM3e-3X7qKnUal25UGhbB3SZg1%40thread.tacv2/EA%20Dashboard?groupId=4b9083a2-892b-42df-81e2-106b9ff5ee9b&tenantId=5de79cf9-bfe2-40d2-a39c-07a191ec2a0e',
+    plannerUrl: '',
+    excelWebUrl: '',
+    teamsChannel: 'https://teams.microsoft.com/l/channel/19%3ANgx-Dzy8Y7qB1mfK7olM3e-3X7qKnUal25UGhbB3SZg1%40thread.tacv2/EA%20Dashboard?groupId=4b9083a2-892b-42df-81e2-106b9ff5ee9b&tenantId=5de79cf9-bfe2-40d2-a39c-07a191ec2a0e',
   },
 };
 
@@ -446,17 +446,7 @@ async function loginWithAccount(account) {
 async function doMicrosoftLogin() {
   try {
     set({loading:true, loadingMsg:"Redirecting to Microsoft login..."});
-    // Use redirect on mobile, popup on desktop
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if(isMobile) {
-      await msalInstance.loginRedirect({ scopes: SCOPES });
-    } else {
-      await msalInstance.loginPopup({ scopes: SCOPES });
-      const accounts = msalInstance.getAllAccounts();
-      if (accounts.length > 0) {
-        await loginWithAccount(accounts[0]);
-      }
-    }
+    await msalInstance.loginRedirect({ scopes: SCOPES });
   } catch(e) {
     console.error("Login failed:", e);
     set({loading:false, loginError:"Login failed. Please try again."});
