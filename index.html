@@ -246,10 +246,7 @@ function taskToSp(task) {
     NextAction: task.nextAction || "",
     WaitingOn: task.waitingOn || "",
     Notes: task.notes || "",
-    DelegatedTo: task.delegatedTo || "",
-    PlannerLink: task.plannerLink || "",
   };
-  if(task.dueDate) fields.DueDate = task.dueDate;
   if(task.category) fields.Catagory = task.category;
   return fields;
 }
@@ -1179,3 +1176,6 @@ initAuth();
 </script>
 </body>
 </html>
+
+
+
