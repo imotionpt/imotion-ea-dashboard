@@ -223,7 +223,7 @@ function spToTask(sp) {
     id: sp.spId,
     spId: sp.spId,
     name: sp.Task_x0020_Name || sp.Title || "",
-    category: sp.Category0 || sp.Category || "Operations",
+    category: sp.Catagory || sp.Category || "Operations",
     owner: sp.Owner || "",
     delegatedTo: sp.DelegatedTo || "",
     status: sp.Status || "Not Started",
@@ -250,7 +250,7 @@ function taskToSp(task) {
     PlannerLink: task.plannerLink || "",
   };
   if(task.dueDate) fields.DueDate = task.dueDate;
-  if(task.category) fields.Category0 = task.category;
+  if(task.category) fields.Catagory = task.category;
   if(task.owner) fields.Owner = task.owner;
   return fields;
 }
@@ -1180,7 +1180,3 @@ initAuth();
 </script>
 </body>
 </html>
-
-
-
-
