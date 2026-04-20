@@ -222,8 +222,8 @@ function spToTask(sp) {
   return {
     id: sp.spId,
     spId: sp.spId,
-    name: sp.Task_x0020_Name || sp.Title || "",
-    category: sp.Catagory || sp.Category || "Operations",
+    name: sp.Title || sp.Task_x0020_Name || sp.LinkTitle || "",
+    category: sp.Catagory || sp.Category || "",
     owner: sp.Owner || "",
     delegatedTo: sp.DelegatedTo || "",
     status: sp.Status || "Not Started",
@@ -443,10 +443,16 @@ async function loginWithAccount(account) {
 async function doMicrosoftLogin() {
   try {
     set({loading:true, loadingMsg:"Redirecting to Microsoft login..."});
-    await msalInstance.loginPopup({ scopes: SCOPES });
-    const accounts = msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-      await loginWithAccount(accounts[0]);
+    // Use redirect on mobile, popup on desktop
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if(isMobile) {
+      await msalInstance.loginRedirect({ scopes: SCOPES });
+    } else {
+      await msalInstance.loginPopup({ scopes: SCOPES });
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        await loginWithAccount(accounts[0]);
+      }
     }
   } catch(e) {
     console.error("Login failed:", e);
@@ -1179,5 +1185,3 @@ initAuth();
 </script>
 </body>
 </html>
-
-
