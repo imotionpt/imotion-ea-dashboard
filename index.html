@@ -239,15 +239,20 @@ function spToTask(sp) {
 }
 
 function taskToSp(task) {
-  return {
+  const fields = {
     Title: task.name,
     Status: task.status || "Not Started",
     Priority: task.priority || "Medium",
-    DueDate: task.dueDate || null,
     NextAction: task.nextAction || "",
     WaitingOn: task.waitingOn || "",
     Notes: task.notes || "",
+    DelegatedTo: task.delegatedTo || "",
+    PlannerLink: task.plannerLink || "",
   };
+  if(task.dueDate) fields.DueDate = task.dueDate;
+  if(task.category) fields.Category = task.category;
+  if(task.owner) fields.Owner = task.owner;
+  return fields;
 }
 
 // ── CONSTANTS ──
@@ -1175,3 +1180,5 @@ initAuth();
 </script>
 </body>
 </html>
+
+
