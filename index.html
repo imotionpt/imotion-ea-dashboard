@@ -222,7 +222,7 @@ function spToTask(sp) {
   return {
     id: sp.spId,
     spId: sp.spId,
-    name: sp.Title || sp.Task_x0020_Name || "",
+    name: sp.Task_x0020_Name || sp.Title || "",
     category: sp.Category || "Operations",
     owner: sp.Owner || "",
     delegatedTo: sp.DelegatedTo || "",
@@ -240,7 +240,7 @@ function spToTask(sp) {
 
 function taskToSp(task) {
   return {
-    Title: task.name,
+    Task_x0020_Name: task.name,
     Category: task.category,
     Owner: task.owner,
     DelegatedTo: task.delegatedTo || "",
@@ -1179,6 +1179,3 @@ initAuth();
 </script>
 </body>
 </html>
-
-
-
