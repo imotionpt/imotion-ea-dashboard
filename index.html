@@ -242,13 +242,18 @@ function taskToSp(task) {
   const fields = { Title: task.name };
   if(task.status) fields.Status = task.status;
   if(task.priority) fields.Priority = task.priority;
-  if(task.nextAction) fields.NextAction = task.nextAction;
-  if(task.waitingOn) fields.WaitingOn = task.waitingOn;
-  if(task.notes) fields.Notes = task.notes;
-  if(task.delegatedTo) fields.DelegatedTo = task.delegatedTo;
-  if(task.plannerLink) fields.PlannerLink = task.plannerLink;
-  if(task.category) fields.Catagory = task.category;
-  if(task.dueDate) fields.DueDate = task.dueDate + "T00:00:00Z";
+  if(task.nextAction && task.nextAction.trim()) fields.NextAction = task.nextAction;
+  if(task.waitingOn && task.waitingOn.trim()) fields.WaitingOn = task.waitingOn;
+  if(task.notes && task.notes.trim()) fields.Notes = task.notes;
+  if(task.delegatedTo && task.delegatedTo.trim()) fields.DelegatedTo = task.delegatedTo;
+  if(task.plannerLink && task.plannerLink.trim()) fields.PlannerLink = task.plannerLink;
+  if(task.category && task.category.trim()) fields.Catagory = task.category;
+  if(task.dueDate && task.dueDate.trim()) {
+    try {
+      const d = new Date(task.dueDate + "T12:00:00");
+      if(!isNaN(d.getTime())) fields.DueDate = d.toISOString();
+    } catch(e) { console.warn("Invalid date:", task.dueDate); }
+  }
   return fields;
 }
 
