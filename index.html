@@ -239,16 +239,14 @@ function spToTask(sp) {
 }
 
 function taskToSp(task) {
-  const fields = {
-    Title: task.name,
-    Status: task.status || "Not Started",
-    Priority: task.priority || "Medium",
-    NextAction: task.nextAction || "",
-    WaitingOn: task.waitingOn || "",
-    Notes: task.notes || "",
-    DelegatedTo: task.delegatedTo || "",
-    PlannerLink: task.plannerLink || "",
-  };
+  const fields = { Title: task.name };
+  if(task.status) fields.Status = task.status;
+  if(task.priority) fields.Priority = task.priority;
+  if(task.nextAction) fields.NextAction = task.nextAction;
+  if(task.waitingOn) fields.WaitingOn = task.waitingOn;
+  if(task.notes) fields.Notes = task.notes;
+  if(task.delegatedTo) fields.DelegatedTo = task.delegatedTo;
+  if(task.plannerLink) fields.PlannerLink = task.plannerLink;
   if(task.category) fields.Catagory = task.category;
   if(task.dueDate) fields.DueDate = task.dueDate + "T00:00:00Z";
   return fields;
