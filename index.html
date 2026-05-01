@@ -200,9 +200,8 @@ async function graphCall(endpoint, method = "GET", body = null) {
 async function spGetItems(listName, select, filter) {
   select = select || "";
   filter = filter || "";
-  // Use fields($select=...) syntax so Graph filters within the expanded fields object
-  const expandClause = select ? `fields($select=${select})` : "fields";
-  let url = `/sites/${SITE_ID}/lists/${listName}/items?expand=${expandClause}&$select=id,fields`;
+  // Expand ALL fields without select restriction — avoids missing custom columns
+  let url = `/sites/${SITE_ID}/lists/${listName}/items?expand=fields`;
   if (filter) url += `&$filter=${filter}`;
   const data = await graphCall(url);
   return data.value.map(i => ({ spId: i.id, ...i.fields }));
@@ -628,7 +627,7 @@ async function submitWeekly() {
 async function refreshTasks() {
   set({syncing:true});
   try {
-    const spTasks = await spGetItems(LISTS.tasks);
+    const spTasks = await spGetItems(LISTS.tasks, "id,Title,Status,Priority,Catagory,DueDate,NextAction,WaitingOn,Notes,DelegatedTo,PlannerLink,Owner,Modified");
     set({tasks:spTasks.map(spToTask),syncing:false});
   } catch(e) {
     console.error("Refresh error:", e);
