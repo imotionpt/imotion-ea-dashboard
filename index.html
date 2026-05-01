@@ -197,9 +197,12 @@ async function graphCall(endpoint, method = "GET", body = null) {
 }
 
 // ── SHAREPOINT LIST OPERATIONS ──
-async function spGetItems(listName, select = "", filter = "") {
-  let url = `/sites/${SITE_ID}/lists/${listName}/items?expand=fields`;
-  if (select) url += `&$select=${select}`;
+async function spGetItems(listName, select, filter) {
+  select = select || "";
+  filter = filter || "";
+  // Use fields($select=...) syntax so Graph filters within the expanded fields object
+  const expandClause = select ? `fields($select=${select})` : "fields";
+  let url = `/sites/${SITE_ID}/lists/${listName}/items?expand=${expandClause}&$select=id,fields`;
   if (filter) url += `&$filter=${filter}`;
   const data = await graphCall(url);
   return data.value.map(i => ({ spId: i.id, ...i.fields }));
@@ -405,7 +408,7 @@ async function loginWithAccount(account) {
 
     // Load tasks from SharePoint
     set({loadingMsg:"Loading tasks from SharePoint..."});
-    const spTasks = await spGetItems(LISTS.tasks);
+    const spTasks = await spGetItems(LISTS.tasks, "id,Title,Status,Priority,Catagory,DueDate,NextAction,WaitingOn,Notes,DelegatedTo,PlannerLink,Owner,Modified");
     const tasks = spTasks.map(spToTask);
 
     // Load config from SharePoint
