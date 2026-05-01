@@ -766,6 +766,7 @@ function taskCardHTML(t){
       ${canEdit()?`<div class="task-actions" data-stop="1">
         ${t.status!=='Done'?`<button class="task-btn" style="color:#16A34A;border-color:#BBF7D0" data-done="${t.id}" title="Mark done">✓</button>`:''}
         <button class="task-btn" style="color:#1D4ED8;border-color:#BFDBFE" data-delopen="${t.id}" title="Delegate">↗</button>
+        ${t.delegatedTo?`<button class="task-btn" style="color:#6264A7;border-color:#C4B5FD" data-notify="${t.id}" title="Notify in Teams">💬</button>`:''}
         <button class="task-btn" style="color:#475569" data-edit="${t.id}" title="Edit">✎</button>
         <button class="task-btn" style="color:#DC2626;border-color:#FECACA" data-del="${t.id}" title="Delete">✕</button>
       </div>`:''}
@@ -1104,6 +1105,9 @@ function attachEvents(){
   document.querySelectorAll('[data-delopen]').forEach(el=>{
     el.addEventListener('click',e=>{e.stopPropagation();const id=el.dataset.delopen;set({delegateFor:S.delegateFor===id?null:id});});
   });
+  document.querySelectorAll('[data-notify]').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();notifyInTeams(el.dataset.notify);});
+  });
   document.querySelectorAll('[data-delegate]').forEach(el=>{
     el.addEventListener('click',e=>{e.stopPropagation();delegateTask(el.dataset.delegate,el.dataset.person);});
   });
@@ -1234,6 +1238,24 @@ function exportData(){
   const csv=rows.map(r=>r.map(c=>`"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iMotion_Tasks.csv';a.click();
+}
+
+function notifyInTeams(id) {
+  const task = S.tasks.find(t => t.id === id);
+  if(!task || !task.delegatedTo) return;
+  const msg = encodeURIComponent(
+    `Hi ${task.delegatedTo}, you have been assigned a task on the iMotion EA Dashboard.\n\n` +
+    `📋 Task: ${task.name}\n` +
+    `📁 Category: ${task.category || '—'}\n` +
+    `⚡ Priority: ${task.priority || '—'}\n` +
+    `📅 Due: ${task.dueDate ? new Date(task.dueDate + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}\n` +
+    `${task.nextAction ? '▶ Next Action: ' + task.nextAction + '\n' : ''}` +
+    `\nPlease review and update status in the dashboard.`
+  );
+  // Open Teams chat with the person
+  const teamsUrl = S.config.teamsChannel || 'https://teams.microsoft.com';
+  // Use Teams deep link to open a chat
+  window.open(`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(task.delegatedTo)}&message=${msg}`, '_blank');
 }
 
 function emailDailyBrief() {
