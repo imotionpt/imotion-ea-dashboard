@@ -436,11 +436,8 @@ async function loginWithAccount(account) {
     try {
       set({loadingMsg:"Loading today's brief..."});
       const todayStr = today();
-      const briefs = await spGetItems(LISTS.briefs, "id,Title,BriefDate,TopPriorities,PendingDecisions,Followups,StuckItems,SubmittedAt,Modified");
-      const todayBrief = briefs.find(b => {
-        const briefDate = (b.BriefDate || b.Title || "").split("T")[0];
-        return briefDate === todayStr || (b.Title || "").includes(todayStr);
-      });
+      const briefs = await spGetItems(LISTS.briefs, "id,Title,TopPriorities,PendingDecisions,Followups,StuckItems,Modified");
+      const todayBrief = briefs.find(b => (b.Title || "").includes(todayStr));
       if(todayBrief) {
         S.brief = {
           priorities: todayBrief.TopPriorities || "",
@@ -448,7 +445,7 @@ async function loginWithAccount(account) {
           followups: todayBrief.Followups || "",
           stuck: todayBrief.StuckItems || "",
           submitted: true,
-          time: todayBrief.SubmittedAt ? new Date(todayBrief.SubmittedAt).toLocaleTimeString() : "earlier today",
+          time: todayBrief.Modified ? new Date(todayBrief.Modified).toLocaleTimeString() : "earlier today",
         };
       }
     } catch(e) {
@@ -589,17 +586,14 @@ async function submitBrief() {
     const now = new Date();
     await spCreateItem(LISTS.briefs, {
       Title: `Daily Brief ${today()}`,
-      BriefDate: now.toISOString(),
       TopPriorities: S.brief.priorities,
       PendingDecisions: S.brief.decisions,
       Followups: S.brief.followups,
       StuckItems: S.brief.stuck,
-      SubmittedAt: now.toISOString(),
     });
     set({brief:{...S.brief,submitted:true,time:now.toLocaleTimeString()},briefTab:'view',syncing:false});
   } catch(e) {
     console.error("Brief submit error:", e);
-    // Still mark submitted locally even if SP fails
     set({brief:{...S.brief,submitted:true,time:new Date().toLocaleTimeString()},briefTab:'view',syncing:false});
   }
 }
