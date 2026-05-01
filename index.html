@@ -436,7 +436,7 @@ async function loginWithAccount(account) {
     try {
       set({loadingMsg:"Loading today's brief..."});
       const todayStr = today();
-      const briefs = await spGetItems(LISTS.briefs);
+      const briefs = await spGetItems(LISTS.briefs, "id,Title,BriefDate,TopPriorities,PendingDecisions,Followups,StuckItems,SubmittedAt,Modified");
       const todayBrief = briefs.find(b => {
         const briefDate = (b.BriefDate || b.Title || "").split("T")[0];
         return briefDate === todayStr || (b.Title || "").includes(todayStr);
@@ -457,7 +457,7 @@ async function loginWithAccount(account) {
 
     // Load this week's review
     try {
-      const reviews = await spGetItems(LISTS.weekly);
+      const reviews = await spGetItems(LISTS.weekly, "id,Title,WeekOf,Wins,MissedTasks,Bottlenecks,Suggestions,Modified");
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       const weekStr = weekStart.toISOString().split("T")[0];
