@@ -915,7 +915,10 @@ function briefHTML(){
           ${!brief.submitted?`<div style="font-size:13px;color:#94A3B8;text-align:center;padding:28px 0">No brief submitted yet today.</div>`:`
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
               <div style="font-size:15px;font-weight:700;color:#003E82">Daily Brief</div>
-              <span class="badge" style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0">✓ Submitted ${esc(brief.time)}</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span class="badge" style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0">✓ Submitted ${esc(brief.time)}</span>
+                <button id="btn-email-brief" style="background:#FF7100;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">✉ Email Brief</button>
+              </div>
             </div>
             ${[['priorities','🎯','Top 3 Priorities'],['decisions','🧠','Decisions Needed'],['followups','📞','Follow-ups'],['stuck','⛔','Stuck/Delayed']].map(([k,ic,l])=>`
               <div style="margin-bottom:13px">
@@ -934,7 +937,12 @@ function briefHTML(){
           <textarea data-weekly="${k}" rows="3" placeholder="${l}...">${esc(weekly[k])}</textarea></div>
         `).join('')}
         <button class="submit-btn" id="btn-weekly-submit">✓ Submit Weekly Review → Saves to SharePoint</button>
-        ${weekly.submitted?`<div class="success-note">✓ Weekly review submitted and saved to SharePoint!</div>`:''}
+        ${weekly.submitted?`
+          <div class="success-note">✓ Weekly review submitted and saved to SharePoint!</div>
+          <div style="text-align:right;margin-top:10px">
+            <button id="btn-email-weekly" style="background:#FF7100;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">✉ Email Weekly Review</button>
+          </div>
+        `:''}
       </div>
     `}
   </div>`;
@@ -1114,6 +1122,10 @@ function attachEvents(){
   if(bBrief)bBrief.addEventListener('click',submitBrief);
   const bWeekly=document.getElementById('btn-weekly-submit');
   if(bWeekly)bWeekly.addEventListener('click',submitWeekly);
+  const bEmailBrief=document.getElementById('btn-email-brief');
+  if(bEmailBrief)bEmailBrief.addEventListener('click',emailDailyBrief);
+  const bEmailWeekly=document.getElementById('btn-email-weekly');
+  if(bEmailWeekly)bEmailWeekly.addEventListener('click',emailWeeklyReview);
 
   const fSearch=document.getElementById('f-search');
   if(fSearch)fSearch.addEventListener('input',e=>set({search:e.target.value}));
@@ -1228,6 +1240,34 @@ function exportData(){
   const csv=rows.map(r=>r.map(c=>`"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='iMotion_Tasks.csv';a.click();
+}
+
+function emailDailyBrief() {
+  const todayLabel = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const subject = encodeURIComponent(`iMotion Daily Brief - ${todayLabel}`);
+  const body = encodeURIComponent(
+    `iMotion Daily Brief\n${todayLabel}\n` +
+    `Submitted by: ${S.user ? S.user.name : 'Team'}\n\n` +
+    `🎯 TOP 3 PRIORITIES TODAY\n${S.brief.priorities || 'Nothing noted.'}\n\n` +
+    `🧠 DECISIONS NEEDED FROM PRATIK\n${S.brief.decisions || 'Nothing noted.'}\n\n` +
+    `📞 FOLLOW-UPS IN PROGRESS\n${S.brief.followups || 'Nothing noted.'}\n\n` +
+    `⛔ STUCK OR DELAYED ITEMS\n${S.brief.stuck || 'Nothing noted.'}`
+  );
+  window.open(`mailto:pratik@imotionpt.com?subject=${subject}&body=${body}`, '_blank');
+}
+
+function emailWeeklyReview() {
+  const weekLabel = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const subject = encodeURIComponent(`iMotion Weekly Review - Week of ${weekLabel}`);
+  const body = encodeURIComponent(
+    `iMotion Weekly Review\nWeek of ${weekLabel}\n` +
+    `Submitted by: ${S.user ? S.user.name : 'Team'}\n\n` +
+    `🏆 WINS THIS WEEK\n${S.weekly.wins || 'Nothing noted.'}\n\n` +
+    `⚠️ MISSED OR DELAYED\n${S.weekly.missed || 'Nothing noted.'}\n\n` +
+    `🚧 BOTTLENECKS\n${S.weekly.bottlenecks || 'Nothing noted.'}\n\n` +
+    `💡 SUGGESTIONS FOR IMPROVEMENT\n${S.weekly.suggestions || 'Nothing noted.'}`
+  );
+  window.open(`mailto:pratik@imotionpt.com?subject=${subject}&body=${body}`, '_blank');
 }
 
 function esc(s){
