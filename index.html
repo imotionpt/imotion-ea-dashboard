@@ -1243,19 +1243,38 @@ function exportData(){
 function notifyInTeams(id) {
   const task = S.tasks.find(t => t.id === id);
   if(!task || !task.delegatedTo) return;
-  const msg = encodeURIComponent(
+
+  // Find the person's email from the users list
+  const person = S.users.find(u => u.name === task.delegatedTo);
+  const email = person ? person.email : '';
+
+  const msgText =
     `Hi ${task.delegatedTo}, you have been assigned a task on the iMotion EA Dashboard.\n\n` +
     `📋 Task: ${task.name}\n` +
     `📁 Category: ${task.category || '—'}\n` +
     `⚡ Priority: ${task.priority || '—'}\n` +
     `📅 Due: ${task.dueDate ? new Date(task.dueDate + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}\n` +
     `${task.nextAction ? '▶ Next Action: ' + task.nextAction + '\n' : ''}` +
-    `\nPlease review and update status in the dashboard.`
-  );
-  // Open Teams chat with the person
-  const teamsUrl = S.config.teamsChannel || 'https://teams.microsoft.com';
-  // Use Teams deep link to open a chat
-  window.open(`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(task.delegatedTo)}&message=${msg}`, '_blank');
+    `\nPlease review and update status in the dashboard.`;
+
+  // Copy message to clipboard and open Teams
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(msgText).then(() => {
+      alert('Message copied to clipboard!\n\nTeams will open — just paste (Ctrl+V) in the chat with ' + task.delegatedTo + '.');
+      if(email) {
+        window.open('https://teams.microsoft.com/l/chat/0/0?users=' + encodeURIComponent(email), '_blank');
+      } else {
+        window.open('https://teams.microsoft.com', '_blank');
+      }
+    });
+  } else {
+    // Fallback - just open Teams
+    if(email) {
+      window.open('https://teams.microsoft.com/l/chat/0/0?users=' + encodeURIComponent(email), '_blank');
+    } else {
+      window.open('https://teams.microsoft.com', '_blank');
+    }
+  }
 }
 
 function emailDailyBrief() {
