@@ -435,21 +435,39 @@ function isOverdue(t){return t.status!=='Done'&&t.dueDate&&new Date(t.dueDate+'T
 function daysSince(d){if(!d)return 0;return Math.floor((Date.now()-new Date(d+'T12:00:00'))/86400000);}
 function canEdit(){return S.user&&['admin','manager'].includes(S.user.role);}
 function isAdmin(){return S.user&&S.user.role==='admin';}
+// Full visibility + full control: Pratik (admin) and Arnel specifically, regardless of role
+function canSeeAllTasks(){return S.user&&(S.user.role==='admin'||S.user.name==='Arnel');}
+// Anyone who isn't a pure viewer can create their own tasks
+function canCreateTasks(){return S.user&&S.user.role!=='viewer';}
+// Per-task check: full-access users can act on anything; everyone else only on tasks they own or are delegated
+function canEditTask(t){
+  if(!S.user) return false;
+  if(canSeeAllTasks()) return true;
+  if(S.user.role==='viewer') return false;
+  return t.owner===S.user.name || t.delegatedTo===S.user.name;
+}
+// The task list scoped to what the current user is allowed to see
+function visibleTasks(){
+  if(canSeeAllTasks()) return S.tasks;
+  if(!S.user) return [];
+  return S.tasks.filter(t=>t.owner===S.user.name || t.delegatedTo===S.user.name);
+}
 
 function stats(){
+  const vt = visibleTasks();
   return {
-    open:S.tasks.filter(t=>t.status!=='Done').length,
-    overdue:S.tasks.filter(t=>isOverdue(t)).length,
-    waiting:S.tasks.filter(t=>t.status==='Waiting').length,
-    high:S.tasks.filter(t=>t.priority==='High'&&t.status!=='Done').length,
-    delegated:S.tasks.filter(t=>t.delegatedTo&&t.status!=='Done').length,
-    done:S.tasks.filter(t=>t.status==='Done').length,
-    stale:S.tasks.filter(t=>t.status!=='Done'&&daysSince(t.lastUpdate)>=2).length,
+    open:vt.filter(t=>t.status!=='Done').length,
+    overdue:vt.filter(t=>isOverdue(t)).length,
+    waiting:vt.filter(t=>t.status==='Waiting').length,
+    high:vt.filter(t=>t.priority==='High'&&t.status!=='Done').length,
+    delegated:vt.filter(t=>t.delegatedTo&&t.status!=='Done').length,
+    done:vt.filter(t=>t.status==='Done').length,
+    stale:vt.filter(t=>t.status!=='Done'&&daysSince(t.lastUpdate)>=2).length,
   };
 }
 
 function filtered(){
-  return S.tasks.filter(t=>{
+  return visibleTasks().filter(t=>{
     if(S.fStatus!=='All'&&t.status!==S.fStatus)return false;
     if(S.fCat!=='All'&&t.category!==S.fCat)return false;
     if(S.fPri!=='All'&&t.priority!==S.fPri)return false;
@@ -845,7 +863,7 @@ function sidebarHTML(st){
     <div class="sb-bottom">
       <button class="btn-export" id="btn-export">${cfg.excelWebUrl?'📊 Open Excel Tracker':'⬇ Export CSV Report'}</button>
       <button class="btn-export" id="btn-refresh" style="color:rgba(255,255,255,0.5)">🔄 Refresh Tasks</button>
-      ${canEdit()?`<button class="btn-orange" id="btn-add-task">+ New Task</button>`:''}
+      ${canCreateTasks()?`<button class="btn-orange" id="btn-add-task">+ New Task</button>`:''}
       <button class="btn-signout" id="btn-signout">Sign Out</button>
     </div>
   </div>`;
@@ -876,7 +894,7 @@ function taskCardHTML(t){
         <span class="badge" style="background:${cc}18;color:${cc}">${esc(t.category)}</span>
         <span class="badge" style="background:${sc.bg};color:${sc.text}">${esc(t.status)}</span>
       </div>
-      ${canEdit()?`<div class="task-actions" data-stop="1">
+      ${canEditTask(t)?`<div class="task-actions" data-stop="1">
         ${t.status!=='Done'?`<button class="task-btn" style="color:#16A34A;border-color:#BBF7D0" data-done="${t.id}" title="Mark done">✓</button>`:''}
         <button class="task-btn" style="color:#1D4ED8;border-color:#BFDBFE" data-delopen="${t.id}" title="Delegate">↗</button>
         ${t.delegatedTo?`<button class="task-btn" style="color:#6264A7;border-color:#C4B5FD" data-notify="${t.id}" title="Notify in Teams">💬</button>`:''}
@@ -929,8 +947,9 @@ function secHead(label,color){
 }
 
 function dashHTML(st){
-  const hi=S.tasks.filter(t=>t.priority==='High'&&t.status!=='Done');
-  const wa=S.tasks.filter(t=>t.status==='Waiting');
+  const vt = visibleTasks();
+  const hi=vt.filter(t=>t.priority==='High'&&t.status!=='Done');
+  const wa=vt.filter(t=>t.status==='Waiting');
   return `<div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <div class="page-title">Good morning, ${esc(S.user.name.split(' ')[0])} 👋</div>
@@ -944,7 +963,7 @@ function dashHTML(st){
     </div>
     ${st.overdue>0?`<div class="alert alert-red">⚠️ ${st.overdue} overdue task${st.overdue>1?'s':''} — needs immediate attention.</div>`:''}
     ${st.stale>0?`<div class="alert alert-amber">🕐 ${st.stale} task${st.stale>1?'s':''} not updated in 48+ hours.</div>`:''}
-    ${S.tasks.length===0?`<div class="alert alert-blue">📋 No tasks yet. Click "+ New Task" to add your first task — it will save directly to SharePoint.</div>`:''}
+    ${vt.length===0?`<div class="alert alert-blue">📋 No tasks yet. Click "+ New Task" to add your first task — it will save directly to SharePoint.</div>`:''}
     ${secHead('High Priority · Active','#FF7100')}
     ${taskListHTML(hi)}
     ${wa.length?secHead('Waiting On External','#D97706')+taskListHTML(wa):''}
@@ -955,7 +974,7 @@ function allTasksHTML(){
   return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
       <div class="page-title">All Tasks</div>
-      ${canEdit()?`<button class="btn-orange" id="btn-add-task2" style="width:auto;padding:9px 18px">+ New Task</button>`:''}
+      ${canCreateTasks()?`<button class="btn-orange" id="btn-add-task2" style="width:auto;padding:9px 18px">+ New Task</button>`:''}
     </div>
     <div class="search-row">
       <input id="f-search" placeholder="Search tasks..." value="${esc(S.search)}" style="flex:1;min-width:140px"/>
@@ -968,21 +987,23 @@ function allTasksHTML(){
 }
 
 function openHTML(){
-  const over=S.tasks.filter(t=>isOverdue(t));
+  const vt = visibleTasks();
+  const over=vt.filter(t=>isOverdue(t));
   return `<div>
     <div class="page-title">Open Items</div>
     <div class="page-sub">Arnel's primary daily view — all active and pending tasks.</div>
     ${over.length?secHead('⚠ Overdue','#DC2626')+taskListHTML(over):''}
     ${['High','Medium','Low'].map(p=>{
-      const pt=S.tasks.filter(t=>t.status!=='Done'&&t.priority===p&&!isOverdue(t));
+      const pt=vt.filter(t=>t.status!=='Done'&&t.priority===p&&!isOverdue(t));
       return pt.length?secHead(`${p} Priority`,PRI_C[p])+taskListHTML(pt):'';
     }).join('')}
   </div>`;
 }
 
 function delegatedHTML(st){
+  const vt = visibleTasks();
   const rows=S.delegates.map(m=>{
-    const mt=S.tasks.filter(t=>t.delegatedTo===m&&t.status!=='Done');
+    const mt=vt.filter(t=>t.delegatedTo===m&&t.status!=='Done');
     if(!mt.length)return'';
     return `<div style="margin-bottom:24px">
       <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
