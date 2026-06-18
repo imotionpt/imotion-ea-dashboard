@@ -112,6 +112,8 @@ td{padding:10px 13px;font-size:12px;border-bottom:1px solid #F1F5F9;color:#0F172
 .file-drop:hover{border-color:#003E82;background:#EFF6FF}
 .attach-item{display:flex;align-items:center;gap:9px;background:#F8FAFC;border-radius:8px;padding:7px 11px;margin-top:6px}
 .attach-name{font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attach-name a{color:#003E82;text-decoration:none}
+.attach-name a:hover{text-decoration:underline}
 .attach-size{font-size:11px;color:#94A3B8}
 .attach-remove{background:none;border:none;cursor:pointer;color:#94A3B8;font-size:16px}
 .no-tasks{font-size:13px;color:#94A3B8;padding:10px 0 16px}
@@ -155,6 +157,7 @@ const LISTS = {
   briefs: "iMotion_DailyBriefs",
   weekly: "iMotion_WeeklyReviews",
   config: "iMotion_AppConfig",
+  attachments: "iMotion_TaskAttachments",
 };
 
 let msalInstance;
@@ -220,8 +223,107 @@ async function spDeleteItem(listName, spId) {
   await graphCall(`/sites/${SITE_ID}/lists/${listName}/items/${spId}`, "DELETE");
 }
 
+// ── FILE ATTACHMENT UPLOAD (to dedicated SharePoint document library) ──
+function formatFileSize(bytes){
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/1024/1024).toFixed(2)+' MB';
+}
+
+async function uploadAttachmentFile(file, onProgress) {
+  const token = await getToken();
+  // Sanitize filename - remove characters SharePoint doesn't allow in file names
+  const safeName = file.name.replace(/[#%&*:<>?/\\{|}"]/g, "_");
+  // Prefix with timestamp to avoid name collisions between different uploads
+  const uniqueName = `${Date.now()}_${safeName}`;
+
+  // Small files (<=4MB): one-shot upload, fast path
+  if (file.size <= 4 * 1024 * 1024) {
+    if(onProgress) onProgress(0);
+    const arrayBuffer = await file.arrayBuffer();
+    const response = await fetch(
+      `${GRAPH_BASE}/sites/${SITE_ID}/lists/${LISTS.attachments}/drive/root:/${encodeURIComponent(uniqueName)}:/content`,
+      {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: arrayBuffer,
+      }
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Upload failed: ${response.status}`);
+    }
+    if(onProgress) onProgress(100);
+    const data = await response.json();
+    return { name: file.name, url: data.webUrl, size: formatFileSize(file.size) };
+  }
+
+  // Larger files (up to 100MB): chunked upload session
+  const sessionResponse = await fetch(
+    `${GRAPH_BASE}/sites/${SITE_ID}/lists/${LISTS.attachments}/drive/root:/${encodeURIComponent(uniqueName)}:/createUploadSession`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ item: { "@microsoft.graph.conflictBehavior": "rename" } }),
+    }
+  );
+  if (!sessionResponse.ok) {
+    const err = await sessionResponse.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Could not start upload: ${sessionResponse.status}`);
+  }
+  const session = await sessionResponse.json();
+  const uploadUrl = session.uploadUrl;
+
+  const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks - a clean multiple of the 320KiB Graph requires
+  const totalSize = file.size;
+  let offset = 0;
+  let finalData = null;
+
+  while (offset < totalSize) {
+    const end = Math.min(offset + CHUNK_SIZE, totalSize);
+    const chunk = file.slice(offset, end);
+    const chunkBuffer = await chunk.arrayBuffer();
+
+    // Note: no Authorization header here - the uploadUrl itself is pre-authenticated
+    const chunkResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Length": String(end - offset),
+        "Content-Range": `bytes ${offset}-${end-1}/${totalSize}`,
+      },
+      body: chunkBuffer,
+    });
+
+    if (!chunkResponse.ok) {
+      const err = await chunkResponse.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Upload failed at byte ${offset}: ${chunkResponse.status}`);
+    }
+
+    offset = end;
+    if(onProgress) onProgress(Math.round((offset/totalSize)*100));
+
+    if (chunkResponse.status === 200 || chunkResponse.status === 201) {
+      finalData = await chunkResponse.json();
+    }
+  }
+
+  if (!finalData) throw new Error("Upload did not complete properly.");
+  return { name: file.name, url: finalData.webUrl, size: formatFileSize(file.size) };
+}
+
 // ── DATA CONVERSION: SharePoint fields <-> App format ──
 function spToTask(sp) {
+  let attachments = [];
+  try {
+    attachments = sp.AttachmentData ? JSON.parse(sp.AttachmentData) : [];
+  } catch(e) {
+    attachments = [];
+  }
   return {
     id: sp.spId,
     spId: sp.spId,
@@ -236,7 +338,7 @@ function spToTask(sp) {
     nextAction: sp.NextAction || "",
     waitingOn: sp.WaitingOn || "",
     notes: sp.Notes || "",
-    attachments: [],
+    attachments: attachments,
     plannerLink: sp.PlannerLink || "",
   };
 }
@@ -257,6 +359,8 @@ function taskToSp(task) {
       if(!isNaN(d.getTime())) fields.DueDate = d.toISOString();
     } catch(e) { console.warn("Invalid date:", task.dueDate); }
   }
+  // Always include attachments (even if empty array) so removing attachments correctly clears the field
+  fields.AttachmentData = JSON.stringify(task.attachments || []);
   return fields;
 }
 
@@ -278,6 +382,7 @@ let S = {
   loading: true,
   loadingMsg: "Signing you in...",
   syncing: false,
+  uploadingFiles: false,
 
   // App data
   tasks: [],
@@ -407,8 +512,15 @@ async function loginWithAccount(account) {
 
     // Load tasks from SharePoint
     set({loadingMsg:"Loading tasks from SharePoint..."});
-    const spTasks = await spGetItems(LISTS.tasks, "id,Title,Status,Priority,Catagory,DueDate,NextAction,WaitingOn,Notes,DelegatedTo,PlannerLink,Owner,Modified");
-    const tasks = spTasks.map(spToTask);
+    let tasks = [];
+    try {
+      const spTasks = await spGetItems(LISTS.tasks, "id,Title,Status,Priority,Catagory,DueDate,NextAction,WaitingOn,Notes,DelegatedTo,PlannerLink,Owner,AttachmentData,Modified");
+      tasks = spTasks.map(spToTask);
+    } catch(e) {
+      console.error("Tasks load error:", e);
+      set({loading:false, loginError:"Could not load tasks. Your account may not have access to the iMotion SharePoint site yet. Please contact Pratik to request access."});
+      return;
+    }
 
     // Load config from SharePoint
     set({loadingMsg:"Loading configuration..."});
@@ -525,6 +637,7 @@ async function saveTask() {
     waitingOn: (document.getElementById('mf-waiting')||{}).value || form.waitingOn,
     notes: (document.getElementById('mf-notes')||{}).value || form.notes,
     plannerLink: (document.getElementById('mf-planner')||{}).value || form.plannerLink || '',
+    attachments: S.form.attachments || [],
     lastUpdate: today(),
   };
 
@@ -621,7 +734,7 @@ async function submitWeekly() {
 async function refreshTasks() {
   set({syncing:true});
   try {
-    const spTasks = await spGetItems(LISTS.tasks, "id,Title,Status,Priority,Catagory,DueDate,NextAction,WaitingOn,Notes,DelegatedTo,PlannerLink,Owner,Modified");
+    const spTasks = await spGetItems(LISTS.tasks, "id,Title,Status,Priority,Catagory,DueDate,NextAction,WaitingOn,Notes,DelegatedTo,PlannerLink,Owner,AttachmentData,Modified");
     set({tasks:spTasks.map(spToTask),syncing:false});
   } catch(e) {
     console.error("Refresh error:", e);
@@ -788,12 +901,21 @@ function delegatePanelHTML(t){
 }
 
 function expandHTML(t){
+  const attsHTML = (t.attachments||[]).length
+    ? `<div style="grid-column:1/-1"><div class="expand-label">Attachments</div><div class="expand-val">${
+        t.attachments.map(a=>a.url
+          ? `<a href="${esc(a.url)}" target="_blank" style="color:#003E82;text-decoration:none;display:inline-block;margin-right:10px">📎 ${esc(a.name)}</a>`
+          : `<span style="display:inline-block;margin-right:10px">📎 ${esc(a.name)}</span>`
+        ).join('')
+      }</div></div>`
+    : '';
   return `<div class="expand-detail">
     <div><div class="expand-label">Next Action</div><div class="expand-val">${esc(t.nextAction)||'—'}</div></div>
     <div><div class="expand-label">Waiting On</div><div class="expand-val">${esc(t.waitingOn)||'—'}</div></div>
     <div style="grid-column:1/-1"><div class="expand-label">Notes</div><div class="expand-val">${esc(t.notes)||'—'}</div></div>
     <div><div class="expand-label">Last Update</div><div class="expand-val">${fmtDate(t.lastUpdate)}</div></div>
     <div><div class="expand-label">Due Date</div><div class="expand-val">${fmtDate(t.dueDate)}</div></div>
+    ${attsHTML}
   </div>`;
 }
 
@@ -1053,13 +1175,13 @@ function modalHTML(){
           <label>Attachments</label>
           <div class="file-drop" id="file-drop">
             <div style="font-size:22px;margin-bottom:4px">📎</div>
-            <div style="font-size:13px;color:#475569;font-weight:500">Click to attach files</div>
-            <div style="font-size:11px;color:#94A3B8;margin-top:2px">PDF, DOCX, XLSX, images</div>
+            <div style="font-size:13px;color:#475569;font-weight:500" id="file-drop-label">${S.uploadingFiles?'Uploading...':'Click to attach files'}</div>
+            <div style="font-size:11px;color:#94A3B8;margin-top:2px">PDF, DOCX, XLSX, images · up to 100MB each</div>
             <input type="file" id="file-input" multiple style="display:none"/>
           </div>
           ${atts.map((a,i)=>`<div class="attach-item">
             <span style="font-size:16px">📄</span>
-            <div style="flex:1;min-width:0"><div class="attach-name">${esc(a.name)}</div><div class="attach-size">${esc(a.size)}</div></div>
+            <div style="flex:1;min-width:0"><div class="attach-name">${a.url?`<a href="${esc(a.url)}" target="_blank">${esc(a.name)}</a>`:esc(a.name)}</div><div class="attach-size">${esc(a.size)}</div></div>
             <button class="attach-remove" data-rem-att="${i}">✕</button>
           </div>`).join('')}
         </div>
@@ -1190,11 +1312,31 @@ function attachEvents(){
   const fileDrop=document.getElementById('file-drop');
   const fileInput=document.getElementById('file-input');
   if(fileDrop&&fileInput){
-    fileDrop.addEventListener('click',()=>fileInput.click());
-    fileInput.addEventListener('change',e=>{
+    fileDrop.addEventListener('click',()=>{ if(!S.uploadingFiles) fileInput.click(); });
+    fileInput.addEventListener('change', async e=>{
       const files=Array.from(e.target.files);
-      S.form.attachments=[...(S.form.attachments||[]),...files.map(f=>({name:f.name,size:(f.size/1024).toFixed(1)+' KB'}))];
-      render();
+      if(!files.length) return;
+      S.uploadingFiles = true; // set directly (no render) so we don't wipe other unsaved fields mid-upload
+      const labelEl = document.getElementById('file-drop-label');
+      if(labelEl) labelEl.textContent = 'Uploading...';
+      for(const f of files){
+        // 100MB cap - generous for scanned docs/photos while keeping browser uploads reliable
+        if(f.size > 100*1024*1024){
+          alert(`"${f.name}" is too large (over 100MB). Please use a smaller file, or share it via a SharePoint link instead.`);
+          continue;
+        }
+        try{
+          const uploaded = await uploadAttachmentFile(f, (pct)=>{
+            if(labelEl) labelEl.textContent = `Uploading ${f.name}... ${pct}%`;
+          });
+          S.form.attachments = [...(S.form.attachments||[]), uploaded];
+        } catch(err){
+          console.error("Attachment upload error:", err);
+          alert(`Could not upload "${f.name}": ${err.message}`);
+        }
+      }
+      set({uploadingFiles:false}); // single re-render here, refreshes the attachment list display
+      fileInput.value = '';
     });
   }
 }
